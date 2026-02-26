@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "change": "Thay đổi",
+    "close": "Đóng",
+    "error": "Đã xảy ra lỗi"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "Bảng điều khiển",
+    "cards": "Thẻ",
+    "logout": "Đăng xuất"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "loginButton": "Đăng nhập",
+    "loggingIn": "Đang đăng nhập...",
+    "register": "Đăng ký",
+    "registerButton": "Đăng ký",
+    "registering": "Đang đăng ký...",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "loginSubtitle": "Dịch vụ phát hành thẻ Wirex",
+    "registerSubtitle": "Tài khoản người dùng Wirex sẽ được tạo tự động",
+    "noAccount": "Chưa có tài khoản?",
+    "hasAccount": "Đã có tài khoản?",
+    "goRegister": "Đăng ký",
+    "goLogin": "Đăng nhập"
+  },
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "totalCards": "Tổng thẻ",
+    "activeCards": "Thẻ hoạt động",
+    "recentCards": "Thẻ gần đây",
+    "viewAll": "Xem tất cả",
+    "noCards": "Chưa có thẻ nào được phát hành",
+    "issueCard": "Phát hành thẻ ảo"
+  },
+  "cards": {
+    "title": "Quản lý thẻ",
+    "issueVirtual": "Phát hành thẻ ảo",
+    "issuing": "Đang phát hành...",
+    "issueVirtualShort": "+ Phát hành thẻ ảo",
+    "noCards": "Chưa có thẻ được phát hành",
+    "expiry": "Hạn sử dụng",
+    "limit": "Hạn mức",
+    "status": {
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "blocked": "Bị khóa",
+      "closed": "Đã đóng"
+    },
+    "block": "Khóa",
+    "unblock": "Mở khóa",
+    "changeLimit": "Thay đổi hạn mức",
+    "changeLimitModal": "Thay đổi hạn mức",
+    "limitPlaceholder": "Hạn mức",
+    "confirmBlock": "Khóa thẻ này?"
+  }
+}

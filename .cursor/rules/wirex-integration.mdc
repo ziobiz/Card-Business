@@ -1,0 +1,26 @@
+---
+description: Wirex BaaS API 기준 개발 시 참조
+globs: backend/**/*.ts,frontend/**/*.tsx,docs/**/*
+alwaysApply: false
+---
+
+# Wirex BaaS 연동 규칙
+
+## 기준 문서
+
+- **Wirex BaaS 문서**: https://docs.wirexapp.com/docs/introduction
+- **API Base (Sandbox)**: https://api-baas.wirexapp.tech
+- **필수 헤더**: Authorization, X-Chain-Id (84532 Sandbox)
+
+## 프로젝트 문서
+
+- `docs/API_REFERENCE.md` - Wirex BaaS API 요약
+- `docs/WIREX_WALLET_INTEGRATION.md` - Unified Balance (WUSD, WEUR)
+- `docs/WIREX_BAAS_ANALYSIS.md` - BaaS vs 기존 구현 비교
+- `docs/BUSINESS_WIREX_ANALYSIS.md` - business.wirexapp.com MCP 분석 (기업용 카드 기능)
+
+## 핵심 구조
+
+- **Unified Balance**: WUSD (USD), WEUR (EUR) — USDT/USDC 입금 시 1:1 래핑
+- **잔액 조회**: GET /api/v1/wallet
+- **인증**: POST /api/v1/token (client_credentials)

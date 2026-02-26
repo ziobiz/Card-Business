@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+backend/src/data/users.json
+*.log
+.DS_Store
+dist/
+build/
+.idea/

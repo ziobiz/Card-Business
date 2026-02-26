@@ -1,0 +1,63 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "backendUnavailable": "バックエンドに接続できません。ターミナルで cd backend && npm run dev を実行してください",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "change": "変更",
+    "close": "閉じる",
+    "error": "エラーが発生しました"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "ダッシュボード",
+    "cards": "カード",
+    "logout": "ログアウト"
+  },
+  "auth": {
+    "login": "ログイン",
+    "loginButton": "ログイン",
+    "loggingIn": "ログイン中...",
+    "register": "新規登録",
+    "registerButton": "登録",
+    "registering": "登録中...",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "loginSubtitle": "Wirex Card発行サービス",
+    "registerSubtitle": "登録時にWirexユーザーアカウントが自動作成されます",
+    "noAccount": "アカウントをお持ちでない方は",
+    "hasAccount": "すでにアカウントをお持ちの方は",
+    "goRegister": "新規登録",
+    "goLogin": "ログイン"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "totalCards": "保有カード",
+    "activeCards": "利用可能カード",
+    "recentCards": "最近のカード",
+    "viewAll": "すべて表示",
+    "noCards": "発行されたカードがありません",
+    "issueCard": "仮想カードを発行"
+  },
+  "cards": {
+    "title": "カード管理",
+    "issueVirtual": "仮想カード発行",
+    "issuing": "発行中...",
+    "issueVirtualShort": "+ 仮想カード発行",
+    "noCards": "発行されたカードがありません",
+    "expiry": "有効期限",
+    "limit": "限度額",
+    "status": {
+      "active": "利用可",
+      "inactive": "利用不可",
+      "blocked": "停止中",
+      "closed": "解約"
+    },
+    "block": "停止",
+    "unblock": "停止解除",
+    "changeLimit": "限度額変更",
+    "changeLimitModal": "限度額変更",
+    "limitPlaceholder": "限度額",
+    "confirmBlock": "このカードを停止しますか？"
+  }
+}

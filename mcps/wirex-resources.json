@@ -1,0 +1,22 @@
+{
+  "name": "wirex-baas-docs",
+  "description": "Wirex BaaS 공식 문서 URL. 개발 기준: docs.wirexapp.com",
+  "baseUrl": "https://docs.wirexapp.com",
+  "apiBase": {
+    "sandbox": "https://api-baas.wirexapp.tech",
+    "production": "https://api-baas.wirexapp.com"
+  },
+  "resources": [
+    { "id": "introduction", "name": "Platform Overview", "url": "https://docs.wirexapp.com/docs/introduction" },
+    { "id": "getting-started", "name": "Getting Started", "url": "https://docs.wirexapp.com/docs/getting-started" },
+    { "id": "environments", "name": "Environments", "url": "https://docs.wirexapp.com/docs/environments" },
+    { "id": "authentication", "name": "Authentication", "url": "https://docs.wirexapp.com/docs/authentication" },
+    { "id": "api-basics", "name": "API Basics", "url": "https://docs.wirexapp.com/docs/api-basics" },
+    { "id": "unified-balance", "name": "Unified Balance (WUSD, WEUR)", "url": "https://docs.wirexapp.com/docs/unified-balance" },
+    { "id": "crypto-assets", "name": "Crypto Assets", "url": "https://docs.wirexapp.com/docs/crypto-assets" },
+    { "id": "cards", "name": "Issue and Manage Cards", "url": "https://docs.wirexapp.com/docs/issue-and-manage-a-card" },
+    { "id": "bank-accounts", "name": "Bank Accounts", "url": "https://docs.wirexapp.com/docs/sepa-bank-details" },
+    { "id": "webhooks", "name": "Webhooks", "url": "https://docs.wirexapp.com/docs/webhooks" },
+    { "id": "activities", "name": "Activity History", "url": "https://docs.wirexapp.com/docs/activities" }
+  ]
+}

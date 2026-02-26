@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "กำลังโหลด...",
+    "cancel": "ยกเลิก",
+    "confirm": "ยืนยัน",
+    "change": "เปลี่ยน",
+    "close": "ปิด",
+    "error": "เกิดข้อผิดพลาด"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "แดชบอร์ด",
+    "cards": "บัตร",
+    "logout": "ออกจากระบบ"
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "loginButton": "เข้าสู่ระบบ",
+    "loggingIn": "กำลังเข้าสู่ระบบ...",
+    "register": "สมัครสมาชิก",
+    "registerButton": "สมัครสมาชิก",
+    "registering": "กำลังสมัคร...",
+    "email": "อีเมล",
+    "password": "รหัสผ่าน",
+    "loginSubtitle": "บริการออกบัตร Wirex Card",
+    "registerSubtitle": "บัญชีผู้ใช้ Wirex จะถูกสร้างโดยอัตโนมัติ",
+    "noAccount": "ยังไม่มีบัญชี?",
+    "hasAccount": "มีบัญชีอยู่แล้ว?",
+    "goRegister": "สมัครสมาชิก",
+    "goLogin": "เข้าสู่ระบบ"
+  },
+  "dashboard": {
+    "title": "แดชบอร์ด",
+    "totalCards": "บัตรทั้งหมด",
+    "activeCards": "บัตรที่ใช้งาน",
+    "recentCards": "บัตรล่าสุด",
+    "viewAll": "ดูทั้งหมด",
+    "noCards": "ยังไม่มีบัตรที่ออก",
+    "issueCard": "ออกบัตรเสมือน"
+  },
+  "cards": {
+    "title": "จัดการบัตร",
+    "issueVirtual": "ออกบัตรเสมือน",
+    "issuing": "กำลังออก...",
+    "issueVirtualShort": "+ ออกบัตรเสมือน",
+    "noCards": "ไม่มีบัตรที่ออก",
+    "expiry": "วันหมดอายุ",
+    "limit": "วงเงิน",
+    "status": {
+      "active": "ใช้งาน",
+      "inactive": "ไม่ใช้งาน",
+      "blocked": "ระงับ",
+      "closed": "ปิด"
+    },
+    "block": "ระงับ",
+    "unblock": "ยกเลิกการระงับ",
+    "changeLimit": "เปลี่ยนวงเงิน",
+    "changeLimitModal": "เปลี่ยนวงเงิน",
+    "limitPlaceholder": "วงเงิน",
+    "confirmBlock": "ต้องการระงับบัตรนี้หรือไม่?"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "ກຳລັງໂຫລດ...",
+    "cancel": "ຍົກເລີກ",
+    "confirm": "ຢືນຢັນ",
+    "change": "ປ່ຽນແປງ",
+    "close": "ປິດ",
+    "error": "ເກີດຂໍ້ຜິດພາດ"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "ແດັຊບອດ",
+    "cards": "ບັດ",
+    "logout": "ອອກຈາກລະບົບ"
+  },
+  "auth": {
+    "login": "ເຂົ້າສູ່ລະບົບ",
+    "loginButton": "ເຂົ້າສູ່ລະບົບ",
+    "loggingIn": "ກຳລັງເຂົ້າສູ່ລະບົບ...",
+    "register": "ລົງທະບຽນ",
+    "registerButton": "ລົງທະບຽນ",
+    "registering": "ກຳລັງລົງທະບຽນ...",
+    "email": "ອີເມວ",
+    "password": "ລະຫັດຜ່ານ",
+    "loginSubtitle": "ບໍລິການອອກບັດ Wirex Card",
+    "registerSubtitle": "ບັນຊີໃຊ້ Wirex ຈະຖືກສ້າງອັດຕະໂນມັດ",
+    "noAccount": "ຍັງບໍ່ມີບັນຊີ?",
+    "hasAccount": "ມີບັນຊີແລ້ວ?",
+    "goRegister": "ລົງທະບຽນ",
+    "goLogin": "ເຂົ້າສູ່ລະບົບ"
+  },
+  "dashboard": {
+    "title": "ແດັຊບອດ",
+    "totalCards": "ບັດທັງໝົດ",
+    "activeCards": "ບັດທີ່ໃຊ້ງານ",
+    "recentCards": "ບັດຫຼ້າສຸດ",
+    "viewAll": "ເບິ່ງທັງໝົດ",
+    "noCards": "ຍັງບໍ່ມີບັດອອກ",
+    "issueCard": "ອອກບັດສະມັກວ"
+  },
+  "cards": {
+    "title": "ຈັດການບັດ",
+    "issueVirtual": "ອອກບັດສະມັກວ",
+    "issuing": "ກຳລັງອອກບັດ...",
+    "issueVirtualShort": "+ ອອກບັດສະມັກວ",
+    "noCards": "ບໍ່ມີບັດອອກ",
+    "expiry": "ວັນຫມົດອາຍຸ",
+    "limit": "ຂອບເຂດ",
+    "status": {
+      "active": "ໃຊ້ງານ",
+      "inactive": "ບໍ່ໃຊ້ງານ",
+      "blocked": "ຂັດຂວາງ",
+      "closed": "ປິດ"
+    },
+    "block": "ຂັດຂວາງ",
+    "unblock": "ຍົກເລີກການຂັດຂວາງ",
+    "changeLimit": "ປ່ຽນແປງຂອບເຂດ",
+    "changeLimitModal": "ປ່ຽນແປງຂອບເຂດ",
+    "limitPlaceholder": "ຂອບເຂດ",
+    "confirmBlock": "ຂັດຂວາງບັດນີ້?"
+  }
+}

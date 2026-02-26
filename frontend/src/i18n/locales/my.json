@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "တပ်ဆင်နေသည်...",
+    "cancel": "ပယ်ဖျက်မည်",
+    "confirm": "အတည်ပြုမည်",
+    "change": "ပြောင်းမည်",
+    "close": "ပိတ်မည်",
+    "error": "အမှားတစ်ခုဖြစ်ပေါ်ခဲ့သည်"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "ဒက်ရှ်ဘို့",
+    "cards": "ကတ်ပြား",
+    "logout": "ထွက်မည်"
+  },
+  "auth": {
+    "login": "ဝင်မည်",
+    "loginButton": "ဝင်မည်",
+    "loggingIn": "ဝင်နေသည်...",
+    "register": "စာရင်းသွင်းမည်",
+    "registerButton": "စာရင်းသွင်းမည်",
+    "registering": "စာရင်းသွင်းနေသည်...",
+    "email": "အီးမေးလ်",
+    "password": "စကားဝှက်",
+    "loginSubtitle": "Wirex Card ထုတ်ဝေရေးဝန်ဆောင်မှု",
+    "registerSubtitle": "Wirex အသုံးပြုသူအကောင့်ကို အလိုအလျောက်ဖန်တီးမည်",
+    "noAccount": "အကောင့်မရှိသေးဘူးလား?",
+    "hasAccount": "အကောင့်ရှိပြီးသားလား?",
+    "goRegister": "စာရင်းသွင်းမည်",
+    "goLogin": "ဝင်မည်"
+  },
+  "dashboard": {
+    "title": "ဒက်ရှ်ဘို့",
+    "totalCards": "စုစုပေါင်းကတ်ပြား",
+    "activeCards": "အသက်ဝင်ကတ်ပြား",
+    "recentCards": "နောက်ဆုံးကတ်ပြား",
+    "viewAll": "အားလုံးကြည့်မည်",
+    "noCards": "အကြောင်းမရှိသေးပါ",
+    "issueCard": "Virtual ကတ်ပြားထုတ်မည်"
+  },
+  "cards": {
+    "title": "ကတ်ပြားစီမံခန့်ခွဲမှု",
+    "issueVirtual": "Virtual ကတ်ပြားထုတ်မည်",
+    "issuing": "ထုတ်နေသည်...",
+    "issueVirtualShort": "+ Virtual ကတ်ပြားထုတ်မည်",
+    "noCards": "အကြောင်းမရှိပါ",
+    "expiry": "သက်တမ်းကုန်",
+    "limit": "ကန့်သတ်ချက်",
+    "status": {
+      "active": "အသက်ဝင်",
+      "inactive": "အသက်မဝင်",
+      "blocked": "ပိတ်ဆို့ပြီး",
+      "closed": "ပိတ်ပြီး"
+    },
+    "block": "ပိတ်ဆို့မည်",
+    "unblock": "ဖြေမည်",
+    "changeLimit": "ကန့်သတ်ချက်ပြောင်းမည်",
+    "changeLimitModal": "ကန့်သတ်ချက်ပြောင်းမည်",
+    "limitPlaceholder": "ကန့်သတ်ချက်",
+    "confirmBlock": "ဤကတ်ပြားကိုပိတ်ဆို့မလား?"
+  }
+}

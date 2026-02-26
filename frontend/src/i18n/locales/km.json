@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "កំពុងផ្ទុក...",
+    "cancel": "បោះបង់",
+    "confirm": "បញ្ជាក់",
+    "change": "ផ្លាស់ប្តូរ",
+    "close": "បិទ",
+    "error": "មានកំហុសបានកើតឡើង"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "ផ្ទាំងគ្រប់គ្រង",
+    "cards": "កាត",
+    "logout": "ចាកចេញ"
+  },
+  "auth": {
+    "login": "ចូល",
+    "loginButton": "ចូល",
+    "loggingIn": "កំពុងចូល...",
+    "register": "ចុះឈ្មោះ",
+    "registerButton": "ចុះឈ្មោះ",
+    "registering": "កំពុងចុះឈ្មោះ...",
+    "email": "អ៉ីមែល",
+    "password": "ពាក្យសម្ងាត់",
+    "loginSubtitle": "សេវាចេញផ្សាយកាត Wirex",
+    "registerSubtitle": "គណនីអ្នកប្រើ Wirex នឹងត្រូវបានបង្កើតដោយស្វ័យប្រវត្តិ",
+    "noAccount": "មិនទាន់មានគណនី?",
+    "hasAccount": "មានគណនីរួចហើយ?",
+    "goRegister": "ចុះឈ្មោះ",
+    "goLogin": "ចូល"
+  },
+  "dashboard": {
+    "title": "ផ្ទាំងគ្រប់គ្រង",
+    "totalCards": "ចំនួនកាតសរុប",
+    "activeCards": "កាតសកម្ម",
+    "recentCards": "កាតថ្មីៗ",
+    "viewAll": "មើលទាំងអស់",
+    "noCards": "មិនទាន់មានកាតចេញផ្សាយ",
+    "issueCard": "ចេញផ្សាយកាតវ៉ាក់ស៊ីន"
+  },
+  "cards": {
+    "title": "ការគ្រប់គ្រងកាត",
+    "issueVirtual": "ចេញផ្សាយកាតវ៉ាក់ស៊ីន",
+    "issuing": "កំពុងចេញផ្សាយ...",
+    "issueVirtualShort": "+ ចេញផ្សាយកាតវ៉ាក់ស៊ីន",
+    "noCards": "មិនមានកាតចេញផ្សាយ",
+    "expiry": "កាលបរិច្ឆេទផុតកំណឹត",
+    "limit": "ដែនកំណត់",
+    "status": {
+      "active": "សកម្ម",
+      "inactive": "អសកម្ម",
+      "blocked": "រារាំង",
+      "closed": "បិទ"
+    },
+    "block": "រារាំង",
+    "unblock": "លែងរារាំង",
+    "changeLimit": "ផ្លាស់ប្តូរដែនកំណត់",
+    "changeLimitModal": "ផ្លាស់ប្តូរដែនកំណត់",
+    "limitPlaceholder": "ដែនកំណត់",
+    "confirmBlock": "រារាំងកាតនេះ?"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Naglo-load...",
+    "cancel": "Kanselahin",
+    "confirm": "Kumpirmahin",
+    "change": "Baguhin",
+    "close": "Isara",
+    "error": "May naganap na error"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "Dashboard",
+    "cards": "Mga Card",
+    "logout": "Mag-log out"
+  },
+  "auth": {
+    "login": "Mag-log in",
+    "loginButton": "Mag-log in",
+    "loggingIn": "Naglo-log in...",
+    "register": "Mag-sign up",
+    "registerButton": "Mag-sign up",
+    "registering": "Nagre-rehistro...",
+    "email": "Email",
+    "password": "Password",
+    "loginSubtitle": "Serbisyo ng Pag-isyu ng Wirex Card",
+    "registerSubtitle": "Ang Wirex user account ay awtomatikong malilikha",
+    "noAccount": "Walang account?",
+    "hasAccount": "Mayroon nang account?",
+    "goRegister": "Mag-sign up",
+    "goLogin": "Mag-log in"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalCards": "Kabuuang Mga Card",
+    "activeCards": "Aktibong Mga Card",
+    "recentCards": "Kamakailang Mga Card",
+    "viewAll": "Tingnan lahat",
+    "noCards": "Wala pang nai-isyung card",
+    "issueCard": "Mag-isyu ng virtual card"
+  },
+  "cards": {
+    "title": "Pamamahala ng Card",
+    "issueVirtual": "Mag-isyu ng virtual card",
+    "issuing": "Nag-iisyu...",
+    "issueVirtualShort": "+ Mag-isyu ng virtual card",
+    "noCards": "Walang nai-isyung card",
+    "expiry": "Expiry",
+    "limit": "Limit",
+    "status": {
+      "active": "Aktibo",
+      "inactive": "Hindi aktibo",
+      "blocked": "Naka-block",
+      "closed": "Sarado"
+    },
+    "block": "I-block",
+    "unblock": "I-unblock",
+    "changeLimit": "Baguhin ang limit",
+    "changeLimitModal": "Baguhin ang limit",
+    "limitPlaceholder": "Limit",
+    "confirmBlock": "I-block ang card na ito?"
+  }
+}

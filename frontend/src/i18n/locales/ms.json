@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Memuatkan...",
+    "cancel": "Batal",
+    "confirm": "Sahkan",
+    "change": "Tukar",
+    "close": "Tutup",
+    "error": "Ralat telah berlaku"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "Papan pemuka",
+    "cards": "Kad",
+    "logout": "Log keluar"
+  },
+  "auth": {
+    "login": "Log masuk",
+    "loginButton": "Log masuk",
+    "loggingIn": "Sedang log masuk...",
+    "register": "Daftar",
+    "registerButton": "Daftar",
+    "registering": "Sedang mendaftar...",
+    "email": "E-mel",
+    "password": "Kata laluan",
+    "loginSubtitle": "Perkhidmatan Pengeluaran Kad Wirex",
+    "registerSubtitle": "Akaun pengguna Wirex akan dicipta secara automatik",
+    "noAccount": "Belum mempunyai akaun?",
+    "hasAccount": "Sudah mempunyai akaun?",
+    "goRegister": "Daftar",
+    "goLogin": "Log masuk"
+  },
+  "dashboard": {
+    "title": "Papan pemuka",
+    "totalCards": "Jumlah Kad",
+    "activeCards": "Kad Aktif",
+    "recentCards": "Kad Terkini",
+    "viewAll": "Lihat semua",
+    "noCards": "Belum ada kad yang dikeluarkan",
+    "issueCard": "Keluarkan kad maya"
+  },
+  "cards": {
+    "title": "Pengurusan Kad",
+    "issueVirtual": "Keluarkan kad maya",
+    "issuing": "Mengeluarkan...",
+    "issueVirtualShort": "+ Keluarkan kad maya",
+    "noCards": "Tiada kad yang dikeluarkan",
+    "expiry": "Tamat tempoh",
+    "limit": "Had",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Tidak aktif",
+      "blocked": "Disekat",
+      "closed": "Ditutup"
+    },
+    "block": "Sekat",
+    "unblock": "Nyahsekat",
+    "changeLimit": "Tukar had",
+    "changeLimitModal": "Tukar had",
+    "limitPlaceholder": "Had",
+    "confirmBlock": "Sekat kad ini?"
+  }
+}

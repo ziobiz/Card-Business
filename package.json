@@ -1,0 +1,13 @@
+{
+  "name": "wirex-card-issuance",
+  "version": "0.1.0",
+  "description": "Wirex Pay API 기반 카드 발급 사이트",
+  "private": true,
+  "scripts": {
+    "dev": "echo '프로젝트 초기화 후 frontend/backend 각각 실행'",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": ["wirex", "card", "fintech"],
+  "author": "",
+  "license": "MIT"
+}

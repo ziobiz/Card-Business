@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "change": "बदलें",
+    "close": "बंद करें",
+    "error": "एक त्रुटि हुई"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "डैशबोर्ड",
+    "cards": "कार्ड",
+    "logout": "लॉग आउट"
+  },
+  "auth": {
+    "login": "लॉग इन",
+    "loginButton": "लॉग इन करें",
+    "loggingIn": "लॉग इन हो रहा है...",
+    "register": "साइन अप",
+    "registerButton": "साइन अप करें",
+    "registering": "साइन अप हो रहा है...",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "loginSubtitle": "Wirex Card जारी करने की सेवा",
+    "registerSubtitle": "Wirex उपयोगकर्ता खाता स्वचालित रूप से बनाया जाएगा",
+    "noAccount": "खाता नहीं है?",
+    "hasAccount": "पहले से खाता है?",
+    "goRegister": "साइन अप करें",
+    "goLogin": "लॉग इन करें"
+  },
+  "dashboard": {
+    "title": "डैशबोर्ड",
+    "totalCards": "कुल कार्ड",
+    "activeCards": "सक्रिय कार्ड",
+    "recentCards": "हाल के कार्ड",
+    "viewAll": "सभी देखें",
+    "noCards": "अभी तक कोई कार्ड जारी नहीं",
+    "issueCard": "वर्चुअल कार्ड जारी करें"
+  },
+  "cards": {
+    "title": "कार्ड प्रबंधन",
+    "issueVirtual": "वर्चुअल कार्ड जारी करें",
+    "issuing": "जारी हो रहा है...",
+    "issueVirtualShort": "+ वर्चुअल कार्ड जारी करें",
+    "noCards": "कोई कार्ड जारी नहीं",
+    "expiry": "समाप्ति",
+    "limit": "सीमा",
+    "status": {
+      "active": "सक्रिय",
+      "inactive": "निष्क्रिय",
+      "blocked": "अवरुद्ध",
+      "closed": "बंद"
+    },
+    "block": "अवरुद्ध करें",
+    "unblock": "अनब्लॉक करें",
+    "changeLimit": "सीमा बदलें",
+    "changeLimitModal": "सीमा बदलें",
+    "limitPlaceholder": "सीमा",
+    "confirmBlock": "इस कार्ड को अवरुद्ध करें?"
+  }
+}

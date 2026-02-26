@@ -1,0 +1,33 @@
+{
+  "name": "wirex-business",
+  "description": "Wirex Business (business.wirexapp.com) 분석 대상 URL. 기업용 카드·스테이블코인·송금 기능 확인용.",
+  "baseUrl": "https://business.wirexapp.com",
+  "resources": [
+    {
+      "id": "dashboard",
+      "name": "Business Dashboard",
+      "url": "https://business.wirexapp.com/dashboard"
+    },
+    {
+      "id": "cards",
+      "name": "Corporate Cards (직원 카드 목록)",
+      "url": "https://business.wirexapp.com/card"
+    },
+    {
+      "id": "transfers",
+      "name": "Transfers (Add Recipient, Batch Send)",
+      "url": "https://business.wirexapp.com/transfer"
+    },
+    {
+      "id": "activity",
+      "name": "Activity (카드별 거래 내역)",
+      "url": "https://business.wirexapp.com/activity"
+    }
+  ],
+  "analysisTargets": [
+    "회사 지갑 + 스테이블코인 충전",
+    "회사 지갑·카드 연동",
+    "직원 카드별 한도 / 사용 내역",
+    "관리자 송금"
+  ]
+}

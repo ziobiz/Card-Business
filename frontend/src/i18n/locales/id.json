@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Memuat...",
+    "cancel": "Batal",
+    "confirm": "Konfirmasi",
+    "change": "Ubah",
+    "close": "Tutup",
+    "error": "Terjadi kesalahan"
+  },
+  "nav": {
+    "brand": "Wirex Card",
+    "dashboard": "Dasbor",
+    "cards": "Kartu",
+    "logout": "Keluar"
+  },
+  "auth": {
+    "login": "Masuk",
+    "loginButton": "Masuk",
+    "loggingIn": "Sedang masuk...",
+    "register": "Daftar",
+    "registerButton": "Daftar",
+    "registering": "Sedang mendaftar...",
+    "email": "Email",
+    "password": "Kata sandi",
+    "loginSubtitle": "Layanan Penerbitan Kartu Wirex",
+    "registerSubtitle": "Akun pengguna Wirex akan dibuat secara otomatis",
+    "noAccount": "Belum punya akun?",
+    "hasAccount": "Sudah punya akun?",
+    "goRegister": "Daftar",
+    "goLogin": "Masuk"
+  },
+  "dashboard": {
+    "title": "Dasbor",
+    "totalCards": "Total Kartu",
+    "activeCards": "Kartu Aktif",
+    "recentCards": "Kartu Terbaru",
+    "viewAll": "Lihat semua",
+    "noCards": "Belum ada kartu yang diterbitkan",
+    "issueCard": "Terbitkan kartu virtual"
+  },
+  "cards": {
+    "title": "Manajemen Kartu",
+    "issueVirtual": "Terbitkan kartu virtual",
+    "issuing": "Menerbitkan...",
+    "issueVirtualShort": "+ Terbitkan kartu virtual",
+    "noCards": "Tidak ada kartu yang diterbitkan",
+    "expiry": "Masa berlaku",
+    "limit": "Limit",
+    "status": {
+      "active": "Aktif",
+      "inactive": "Nonaktif",
+      "blocked": "Diblokir",
+      "closed": "Ditutup"
+    },
+    "block": "Blokir",
+    "unblock": "Buka blokir",
+    "changeLimit": "Ubah limit",
+    "changeLimitModal": "Ubah limit",
+    "limitPlaceholder": "Limit",
+    "confirmBlock": "Blokir kartu ini?"
+  }
+}
