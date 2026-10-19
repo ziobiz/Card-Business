@@ -157,6 +157,54 @@ select,
 .status div { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; }
 .status dt { color: var(--color-muted); }
 .bad { color: var(--color-danger); }
+.good { color: var(--color-success); }
+.shell { display: grid; gap: 1.25rem; }
+.brand { font-size: 1.05rem; }
+.nav { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.nav a {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.nav a.active { border-color: var(--color-primary); color: var(--color-primary); }
+.top .lang-switcher { margin-top: 0; }
+.card-grid { display: grid; gap: 0.75rem; }
+.paycard {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #f8fafc;
+  background: linear-gradient(145deg, #0e7490, #1e293b 70%);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.paycard.plastic { background: linear-gradient(145deg, #334155, #0f172a 70%); }
+.paycard.detail { margin-bottom: 1rem; }
+.paycard strong { font-size: 1.25rem; }
+.paycard p { margin: 0; }
+.paycard-top, .paycard-meta, .paycard-wait { display: flex; justify-content: space-between; color: #cbd5e1; font-size: 0.85rem; }
+.paycard-wait { color: #fde68a; }
+.stack { display: grid; gap: 0.75rem; margin-top: 1rem; }
+.stack label, .limit-grid label { display: grid; gap: 0.35rem; color: var(--color-muted); font-size: 0.9rem; }
+.limit-grid { display: grid; gap: 0.75rem; }
+@media (min-width: 700px) { .limit-grid { grid-template-columns: 1fr 1fr; } }
+.hint { color: var(--color-muted); font-size: 0.9rem; margin: 0; }
+.choice { display: flex; gap: 0.5rem; }
+.choice button { margin-top: 0; }
+.choice button.on { border-color: var(--color-primary); color: var(--color-primary); }
+.banner { padding: 0.75rem 1rem; border-radius: 8px; background: rgba(250, 204, 21, 0.12); color: #fde68a; }
+.row-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.row-actions button { margin-top: 0; }
+.danger { color: var(--color-danger); }
+.people { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+.people li { display: grid; gap: 0.15rem; padding: 0.9rem 1rem; border: 1px solid var(--color-border); border-radius: 10px; }
+a.btn-primary { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; width: auto; min-height: 44px; padding: 0.6rem 1rem; }
 button {
   margin-top: 1rem;
   min-height: 36px;

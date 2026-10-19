@@ -1,4 +1,11 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(here, '../..');
+dotenv.config({ path: path.join(repoRoot, '.env') });
+dotenv.config();
 
 /**
  * Wirex Corporate API. Retail(api-baas) 키가 아니다.
@@ -19,4 +26,6 @@ export const config = {
   port: parseInt(process.env.PORT ?? '3002', 10),
   jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-change-in-production',
   useMockWirex: process.env.USE_MOCK_WIREX !== 'false', // 기본값 true (Mock 사용)
+  /** 개발이 끝날 때까지 기본 중지. 다시 켤 때 OTP_ENABLED=true */
+  otpEnabled: process.env.OTP_ENABLED === 'true',
 };

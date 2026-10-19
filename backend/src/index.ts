@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config, wirexCorporate } from './config.js';
 import { fetchCorporateConfig, fetchPartnerToken } from './clients/corporateClient.js';
+import consoleRouter from './routes/console.js';
 
 const app = express();
 app.use(cors({ origin: true }));
@@ -18,6 +19,8 @@ app.get('/health', (_req, res) => {
   });
 });
 
+app.use('/api', consoleRouter);
+
 app.get('/api/corporate/status', async (_req, res) => {
   const out: Record<string, unknown> = {
     apiBase: wirexCorporate.apiBase,
@@ -27,11 +30,18 @@ app.get('/api/corporate/status', async (_req, res) => {
     mock: config.useMockWirex,
   };
   try {
+    const summary = await fetchCorporateConfig();
     out.configReachable = true;
-    out.config = await fetchCorporateConfig();
+    if (summary.chainName) out.chainName = summary.chainName;
+    if (summary.chainId) out.reportedChainId = summary.chainId;
   } catch (e) {
     out.configReachable = false;
     out.configError = (e as Error).message;
+  }
+  if (!wirexCorporate.clientId || !wirexCorporate.clientSecret) {
+    out.tokenOk = false;
+    out.tokenError = 'WIREX_CLIENT_ID / WIREX_CLIENT_SECRET 가 없습니다. Corporate 키를 넣으세요.';
+    return res.json(out);
   }
   if (config.useMockWirex) {
     out.tokenOk = false;
@@ -40,8 +50,7 @@ app.get('/api/corporate/status', async (_req, res) => {
   }
   const token = await fetchPartnerToken();
   out.tokenOk = token.ok;
-  if (token.ok) out.tokenPreview = token.preview;
-  else out.tokenError = token.error;
+  if (!token.ok) out.tokenError = token.error;
   res.json(out);
 });
 

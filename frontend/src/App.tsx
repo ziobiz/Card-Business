@@ -1,69 +1,44 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
-type Status = {
-  apiBase?: string;
-  chainId?: number;
-  credentialsSet?: boolean;
-  partnerIdSet?: boolean;
-  tokenOk?: boolean;
-  tokenError?: string;
-  note?: string;
-  configReachable?: boolean;
-  configError?: string;
-};
-
-const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3002';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import AdminShell from './components/AdminShell';
+import AdminLogin from './pages/AdminLogin';
+import AdminOtp from './pages/AdminOtp';
+import AdminPassword from './pages/AdminPassword';
+import ConsolePage from './pages/ConsolePage';
+import { AccessPage, BrandPage, DashboardPage, ManualPage, PlatformPage, RevenuePage, RiskPage } from './pages/DeskPages';
+import LinkPage from './pages/LinkPage';
+import OrgRegisterPage from './pages/OrgRegisterPage';
+import UserPage from './pages/UserPage';
 
 export default function App() {
-  const { t, i18n } = useTranslation();
-  const [status, setStatus] = useState<Status | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`${API}/api/corporate/status`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setStatus(await res.json());
-    } catch (e) {
-      setStatus(null);
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, []);
-
   return (
-    <main className="page">
-      <header className="top">
-        <h1>{t('title')}</h1>
-        <button type="button" onClick={() => i18n.changeLanguage(i18n.language === 'ko' ? 'en' : 'ko')}>
-          {i18n.language === 'ko' ? 'EN' : '한국어'}
-        </button>
-      </header>
-      <p className="lead">{t('lead')}</p>
-      {loading ? <p>{t('loading')}</p> : null}
-      {error ? <p className="bad">{error}</p> : null}
-      {status ? (
-        <dl className="status">
-          <div><dt>{t('api')}</dt><dd>{status.apiBase}</dd></div>
-          <div><dt>{t('chain')}</dt><dd>{status.chainId}</dd></div>
-          <div><dt>{t('keys')}</dt><dd>{status.credentialsSet ? t('set') : t('missing')}</dd></div>
-          <div><dt>{t('partner')}</dt><dd>{status.partnerIdSet ? t('set') : t('missing')}</dd></div>
-          <div><dt>{t('token')}</dt><dd>{status.tokenOk ? t('ok') : t('fail')}</dd></div>
-        </dl>
-      ) : null}
-      {status?.note ? <p>{status.note}</p> : null}
-      {status?.tokenError ? <p className="bad">{status.tokenError}</p> : null}
-      {status?.configError ? <p className="bad">{status.configError}</p> : null}
-      <button type="button" onClick={() => void load()}>{t('refresh')}</button>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/otp" element={<AdminOtp />} />
+        <Route path="/hq" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/org" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin" element={<AdminShell />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="orgs" element={<OrgRegisterPage />} />
+          <Route path="risk" element={<RiskPage />} />
+          <Route path="revenue" element={<RevenuePage />} />
+          <Route path="usage" element={<ConsolePage />} />
+          <Route path="fees" element={<ConsolePage />} />
+          <Route path="org-ops" element={<ConsolePage />} />
+          <Route path="users" element={<ConsolePage />} />
+          <Route path="activity" element={<ConsolePage />} />
+          <Route path="brand" element={<BrandPage />} />
+          <Route path="access" element={<AccessPage />} />
+          <Route path="platform" element={<PlatformPage />} />
+          <Route path="manual" element={<ManualPage />} />
+          <Route path="link" element={<LinkPage />} />
+          <Route path="me" element={<AdminPassword />} />
+        </Route>
+        <Route path="/me" element={<UserPage />} />
+        <Route path="*" element={<Navigate to="/admin/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

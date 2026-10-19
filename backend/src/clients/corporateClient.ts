@@ -14,13 +14,26 @@ type TokenResponse = {
   message?: string;
 };
 
-export async function fetchCorporateConfig(): Promise<unknown> {
+export type CorporateConfigSummary = {
+  chainId?: number;
+  chainName?: string;
+  apiUrl?: string;
+};
+
+export async function fetchCorporateConfig(): Promise<CorporateConfigSummary> {
   const res = await fetch(`${wirexCorporate.apiBase}/api/v1/config`);
-  const data = await res.json().catch(() => ({}));
+  const data = (await res.json().catch(() => ({}))) as {
+    api?: { apiUrl?: string };
+    defaultChain?: { id?: number; name?: string };
+  };
   if (!res.ok) {
     throw new Error(`config ${res.status}`);
   }
-  return data;
+  return {
+    chainId: data.defaultChain?.id,
+    chainName: data.defaultChain?.name,
+    apiUrl: data.api?.apiUrl,
+  };
 }
 
 export async function fetchPartnerToken(): Promise<{ ok: true; preview: string } | { ok: false; error: string }> {
