@@ -140,3 +140,30 @@ select,
     padding: 1.5rem 2rem;
   }
 }
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.lead { color: var(--color-muted); line-height: 1.5; }
+.status { display: grid; gap: 0.75rem; }
+.status div { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; }
+.status dt { color: var(--color-muted); }
+.bad { color: var(--color-danger); }
+button {
+  margin-top: 1rem;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}

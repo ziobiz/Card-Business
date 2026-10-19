@@ -1,9 +1,16 @@
-# Wirex Card Business - 기업용 카드 발급
+# Card-Business — 회사 카드
 
-**기업용** 카드 발급 웹 서비스입니다.  
-회사 지갑, 직원 카드(가상/물리), 일일/라이프 한도, 관리자 송금.
+회사 지갑 하나와 직원 카드. [Wirex Corporate API](https://docs.wirexapp.com/docs/corporate-cards) 기준입니다.
 
-> 배포 시 **별도 도메인** 사용 (예: card-business.example.com)
+개인 카드(`D:\Delopment\Card-Personal`, icocard.net)와 저장소, 서버, API 키를 공유하지 않습니다.
+
+- 로컬: 이 폴더를 Cursor에서 연다
+- 서버: InterServer 신규 VPS (IP 확정 후)
+- 도메인: `business.icocard.net` (IP에 연결)
+- API: `https://api-business.wirexapp.tech` (Sandbox, chain 84532)
+- 키: Corporate용 `client_id`, `client_secret`, `partner_id`. 개인 카드 키는 사용할 수 없다
+
+로컬 포트는 개인 카드와 겹치지 않게 백엔드 `3002`, 프론트 `4000` 입니다.
 
 ## 실행 방법
 
