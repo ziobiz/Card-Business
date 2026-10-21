@@ -161,51 +161,6 @@ export function RevenuePage() {
   );
 }
 
-export function BrandPage() {
-  const { t } = useTranslation();
-  return (
-    <section className="panel">
-      <h2>ICOCARD</h2>
-      <p>{t('desk.brandLead')}</p>
-      <img src="/brand/icocard-logo.png" alt="ICOCARD" style={{ maxHeight: 48 }} />
-    </section>
-  );
-}
-
-export function AccessPage() {
-  const { t } = useTranslation();
-  const rows = [
-    ['Admin', 'dashboard, orgs, risk, revenue, usage, fees, orgOps, users, activity, access, manual'],
-    ['Accountant', 'dashboard, revenue, fees, activity, manual'],
-    ['General', 'dashboard, orgs, users, usage, activity, manual'],
-    ['Operator', 'dashboard, usage, activity, manual'],
-  ];
-  return (
-    <section className="panel">
-      <h2>{t('menu.access')}</h2>
-      <p>{t('desk.accessLead')}</p>
-      <table><tbody>{rows.map((row) => <tr key={row[0]}><td>{row[0]}</td><td>{row[1]}</td></tr>)}</tbody></table>
-    </section>
-  );
-}
-
-export function PlatformPage() {
-  const { t } = useTranslation();
-  return (
-    <section className="panel">
-      <h2>{t('menu.platform')}</h2>
-      <p>{t('desk.platformLead')}</p>
-      <table>
-        <tbody>
-          <tr><th>{t('desk.domain')}</th><td>business.icocard.net</td></tr>
-          <tr><th>{t('desk.ssl')}</th><td>HTTPS</td></tr>
-          <tr><th>{t('desk.chain')}</th><td>Base Sepolia 84532</td></tr>
-        </tbody>
-      </table>
-    </section>
-  );
-}
-
 export function ManualPage() {
   const { t } = useTranslation();
   return (

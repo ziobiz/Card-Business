@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 export type OrgLevel = 'hq' | 'large' | 'middle' | 'small';
 export type Role = 'hq' | 'org' | 'user';
 export type StaffRole = 'admin' | 'accountant' | 'general' | 'operator';
+export type FundingMode = 'prefunded' | 'shared' | 'split';
+export type SpendMode = 'prefunded' | 'shared';
 
 export type OrgProfile = {
   bizNo: string;
@@ -37,6 +39,13 @@ export type Org = {
   cardQuota: number;
   limitBudget: number;
   profile?: OrgProfile;
+  fundingMode?: FundingMode;
+  prefundedBudget?: number;
+  brandName?: string;
+  logoUrl?: string;
+  slug?: string;
+  customDomain?: string;
+  accentColor?: string;
 };
 
 export type Account = {
@@ -50,6 +59,7 @@ export type Account = {
   otpPending?: string;
   staffRole?: StaffRole;
   primary?: boolean;
+  spendMode?: SpendMode;
 };
 
 export type BizCard = {
@@ -59,6 +69,8 @@ export type BizCard = {
   name: string;
   format: 'virtual' | 'plastic';
   status: 'active' | 'blocked' | 'closed';
+  spendMode?: SpendMode;
+  cardLimit?: number;
   createdAt: string;
   monthKey?: string;
 };
@@ -118,6 +130,7 @@ type Db = {
   feeItems: FeeItem[];
   markups: OrgMarkup[];
   charges: Charge[];
+  menuAccess?: Partial<Record<StaffRole, string[]>>;
 };
 
 const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../data/org.json');
@@ -183,7 +196,28 @@ function normalize(data: Db): Db {
   data.feeItems = data.feeItems ?? [];
   data.markups = data.markups ?? [];
   data.charges = data.charges ?? [];
+  data.menuAccess = data.menuAccess ?? {};
   return data;
+}
+
+export const MENU_IDS = ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'brand', 'access', 'platform', 'manual', 'link'] as const;
+
+export const DEFAULT_ROLE_MENUS: Record<StaffRole, string[]> = {
+  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'access', 'manual'],
+  accountant: ['dashboard', 'revenue', 'fees', 'activity', 'manual'],
+  general: ['dashboard', 'orgs', 'users', 'usage', 'activity', 'manual'],
+  operator: ['dashboard', 'usage', 'activity', 'manual'],
+};
+
+export function roleMenus(db: Db): Record<StaffRole, string[]> {
+  const stored = db.menuAccess ?? {};
+  const roles: StaffRole[] = ['admin', 'accountant', 'general', 'operator'];
+  const out = {} as Record<StaffRole, string[]>;
+  for (const role of roles) {
+    const picked = stored[role]?.filter((id) => (MENU_IDS as readonly string[]).includes(id));
+    out[role] = picked?.length ? picked : [...DEFAULT_ROLE_MENUS[role]];
+  }
+  return out;
 }
 
 export function readDb(): Db {
@@ -295,6 +329,97 @@ export function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export function fundingModeOf(org: Org): FundingMode {
+  return org.fundingMode === 'prefunded' || org.fundingMode === 'split' ? org.fundingMode : 'shared';
+}
+
+export function cardSpendMode(card: BizCard): SpendMode {
+  return card.spendMode === 'prefunded' ? 'prefunded' : 'shared';
+}
+
+export function cardSpent(db: Db, cardId: string) {
+  const payments = db.spends.filter((row) => row.cardId === cardId).reduce((sum, row) => {
+    const legacyFee = row.orgFee == null ? row.fee : 0;
+    return sum + row.amount + legacyFee;
+  }, 0);
+  const orgCharges = db.charges.filter((row) => row.cardId === cardId && row.payer === 'org').reduce((sum, row) => sum + row.total, 0);
+  return money(payments + orgCharges);
+}
+
+export function poolsOf(db: Db, org: Org) {
+  const allocatedLimit = money(childrenOf(db, org.id).reduce((sum, child) => sum + child.limitBudget, 0));
+  const own = money(org.limitBudget - allocatedLimit);
+  const mode = fundingModeOf(org);
+  const requested = money(Math.max(0, org.prefundedBudget ?? 0));
+  const prefundedPool = mode === 'prefunded' ? Math.max(own, 0) : mode === 'split' ? money(Math.min(requested, Math.max(own, 0))) : 0;
+  const sharedPool = money(Math.max(0, own - prefundedPool));
+  const openCards = db.cards.filter((card) => card.orgId === org.id && card.status !== 'closed');
+  const reserved = money(openCards.filter((card) => cardSpendMode(card) === 'prefunded').reduce((sum, card) => sum + (card.cardLimit ?? 0), 0));
+  const sharedSpent = money(db.cards.filter((card) => card.orgId === org.id && cardSpendMode(card) === 'shared').reduce((sum, card) => sum + cardSpent(db, card.id), 0));
+  return {
+    fundingMode: mode,
+    prefundedBudget: money(org.prefundedBudget ?? 0),
+    operatingBudget: own,
+    prefundedPool: money(prefundedPool),
+    sharedPool,
+    reserved,
+    prefundedFree: money(prefundedPool - reserved),
+    sharedRemaining: money(sharedPool - sharedSpent),
+  };
+}
+
+export function fundingFits(db: Db, org: Org, mode: FundingMode, prefundedBudget: number) {
+  const draft: Org = { ...org, fundingMode: mode, prefundedBudget };
+  const own = money(org.limitBudget - childrenOf(db, org.id).reduce((sum, child) => sum + child.limitBudget, 0));
+  if (mode === 'split' && prefundedBudget > Math.max(own, 0) + 0.001) return 'prefunded_short';
+  const pools = poolsOf(db, draft);
+  const openCards = db.cards.filter((card) => card.orgId === org.id && card.status !== 'closed');
+  for (const card of openCards) {
+    const spendMode = cardSpendMode(card);
+    if (mode === 'prefunded' && spendMode !== 'prefunded') return 'funding_cards';
+    if (mode === 'shared' && spendMode === 'prefunded') return 'funding_cards';
+    if (spendMode === 'prefunded' && !(card.cardLimit && card.cardLimit > 0)) return 'funding_cards';
+  }
+  if (pools.reserved > pools.prefundedPool + 0.001) return 'prefunded_short';
+  if (pools.sharedRemaining < -0.001) return 'shared_short';
+  return null;
+}
+
+export function reserveFits(db: Db, org: Org, spendMode: SpendMode, cardLimit: number) {
+  const mode = fundingModeOf(org);
+  if (mode === 'prefunded' && spendMode !== 'prefunded') return 'spend_mode';
+  if (mode === 'shared' && spendMode !== 'shared') return 'spend_mode';
+  if (!Number.isFinite(cardLimit) || cardLimit <= 0) return 'card_limit_min';
+  const pools = poolsOf(db, org);
+  if (spendMode === 'prefunded' && cardLimit > pools.prefundedFree + 0.001) return 'prefunded_short';
+  return null;
+}
+
+export function chargeFits(db: Db, org: Org, card: BizCard, base: number, orgFee: number) {
+  const cost = money(base + orgFee);
+  const spent = cardSpent(db, card.id);
+  const pools = poolsOf(db, org);
+  if (cardSpendMode(card) === 'prefunded') {
+    if (money(spent + cost) > (card.cardLimit ?? 0) + 0.001) return 'card_limit';
+    return null;
+  }
+  if (card.cardLimit != null && money(spent + cost) > card.cardLimit + 0.001) return 'card_limit';
+  if (cost > pools.sharedRemaining + 0.001) return 'shared_short';
+  return null;
+}
+
+export function heldAmount(db: Db, org: Org) {
+  return money(db.cards.filter((card) => card.orgId === org.id).reduce((sum, card) => {
+    if (cardSpendMode(card) === 'prefunded' && card.status !== 'closed') return sum + (card.cardLimit ?? 0);
+    return sum + cardSpent(db, card.id);
+  }, 0));
+}
+
+export function fundedFloor(db: Db, org: Org) {
+  const childLimit = childrenOf(db, org.id).reduce((sum, child) => sum + child.limitBudget, 0);
+  return money(childLimit + heldAmount(db, org));
+}
+
 export function orgStats(db: Db, org: Org) {
   const children = childrenOf(db, org.id);
   const allocatedCards = children.reduce((sum, child) => sum + child.cardQuota, 0);
@@ -303,11 +428,12 @@ export function orgStats(db: Db, org: Org) {
   const limitUsed = usedAmount(db, org.id);
   return {
     ...org,
+    ...poolsOf(db, org),
     cardsIssued,
     limitUsed,
     allocatedCards,
     allocatedLimit,
     remainingCards: org.cardQuota - allocatedCards - cardsIssued,
-    remainingLimit: money(org.limitBudget - allocatedLimit - limitUsed),
+    remainingLimit: money(org.limitBudget - allocatedLimit - heldAmount(db, org)),
   };
 }

@@ -35,6 +35,48 @@
     "renameHint": "The level code stays HQ, BL, ML, or SL. Only the name changes, the same way a merchant name is set at registration.",
     "saveName": "Save name"
   },
+  "fund": {
+    "title": "How users spend",
+    "lead": "Giving funds to an organization stays the same. What changes is how that organization opens limits for its users.",
+    "mode": "Funding model",
+    "prefunded": "Pre-funded limit",
+    "shared": "Shared limit",
+    "split": "Pre-funded + shared",
+    "prefundedAmount": "Amount held for pre-funded cards",
+    "person": "This user's limit",
+    "cardLimit": "Card limit",
+    "save": "Save funding model",
+    "pools": "Pre-funded {{prefunded}} · Shared {{shared}}",
+    "live": "Reserved {{reserved}} · Pre-funded left {{free}} · Shared left {{sharedLeft}}",
+    "help": {
+      "prefunded": "The amount is taken from the parent balance and locked to the card. Other cards cannot spend it.",
+      "shared": "The card limit is a ceiling. Payment draws from the organization balance, and the sum of ceilings may exceed that balance.",
+      "split": "One organization keeps two pools. Executives can use a pre-funded card and staff a shared limit."
+    }
+  },
+  "brand": {
+    "title": "Organization site",
+    "lead": "When this organization becomes its own site, people sign in with its logo and address. Funds and fees stay under headquarters.",
+    "name": "Display name",
+    "logo": "Logo URL",
+    "slug": "Subdomain code",
+    "domain": "Connected domain",
+    "save": "Save site",
+    "saved": "The organization site was saved.",
+    "accent": "Accent color",
+    "inherit": "Leave the name, logo, and accent empty to use the parent organization's. The subdomain and connected domain belong only to this organization."
+  },
+  "access": {
+    "lead": "These menus are what an operator added by the organization can see. Dashboard stays open. Opening a screen does not grant a save the role is blocked from.",
+    "menu": "Menu",
+    "save": "Save menus",
+    "saved": "Menu access was saved. Sign in again to refresh the left menu."
+  },
+  "platform": {
+    "lead": "A connected domain or subdomain code tells the login screen which organization this is. Pointing that domain at this server is done outside this screen.",
+    "api": "Company card API",
+    "loginHost": "Login address"
+  },
   "account": {
     "title": "Add account",
     "hint": "Users can be added on BL, ML, or SL. An account cannot move to another organization.",
@@ -93,6 +135,7 @@
   "fee": {
     "title": "Fee channel",
     "lead": "Each fee adds a percent and a fixed crypto amount. Markup order is W, HQ, BL, ML, SL. HQ edits every cell. Each organization edits only its own level.",
+    "waterfall": "Fees from this organization follow {{chain}}. A user under SL pays the ML, BL, and headquarters cells above them.",
     "scope": "The table shows the levels above the organization selected on the left. Organization fees come out of that limit. User fees appear on the user statement.",
     "sample": "Preview amount USD",
     "loading": "Loading fees...",
@@ -167,6 +210,20 @@
     "user_level": "Users belong on BL, ML, or SL. An account cannot move later.",
     "email_exists": "That email is already registered.",
     "limit_short": "The organization limit is too low, including fees the organization pays.",
+    "prefunded_min": "The pre-funded amount for a split organization must be greater than zero.",
+    "prefunded_short": "The pre-funded pool is smaller than the amount already reserved on cards.",
+    "shared_short": "The shared balance is too low. Shared cards draw from it only when they pay.",
+    "card_limit": "This payment is above the card limit.",
+    "card_limit_min": "The card limit must be greater than zero.",
+    "spend_mode": "That limit type does not match this organization's funding model.",
+    "funding_cards": "Issued cards use a different limit type, so the funding model cannot change.",
+    "slug_invalid": "Use letters and numbers for the subdomain code.",
+    "slug_exists": "That subdomain is already in use.",
+    "domain_invalid": "Check the domain.",
+    "domain_exists": "That domain is already connected.",
+    "logo_invalid": "The logo must be an http address or a path on this site.",
+    "accent_invalid": "Use a 6-digit color such as #2563eb.",
+    "menus_required": "Send the menu set.",
     "fee_view": "Only operators can view fees.",
     "hq_event": "Only HQ can add a fee event.",
     "event_name": "Enter a fee event name.",

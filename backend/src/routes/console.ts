@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../config.js';
+import { config, wirexCorporate } from '../config.js';
 import { generateOtpSecret, otpAuthUrl, verifyTotp } from '../lib/totp.js';
 import {
+  chargeFits,
   checkPassword,
+  chainOf,
   childrenOf,
   descendantIds,
   feeLines,
+  fundedFloor,
+  fundingFits,
   hashPassword,
   issuedCount,
   money,
@@ -14,15 +18,20 @@ import {
   orgStats,
   rateNum,
   readDb,
+  reserveFits,
+  roleMenus,
   splitFees,
   usedAmount,
   writeDb,
+  MENU_IDS,
   type BizCard,
+  type FundingMode,
   type Org,
   type OrgLevel,
   type Rate,
   type OrgProfile,
   type Role,
+  type SpendMode,
   type StaffRole,
 } from '../orgStore.js';
 
@@ -71,7 +80,7 @@ function canManage(actor: Actor, orgId: string) {
   return descendantIds(readDb(), actor.orgId).has(orgId);
 }
 
-function publicAccount(account: { id: string; role: Role; orgId: string; name: string; email: string; otpSecret?: string; staffRole?: StaffRole; primary?: boolean }) {
+function publicAccount(account: { id: string; role: Role; orgId: string; name: string; email: string; otpSecret?: string; staffRole?: StaffRole; primary?: boolean; spendMode?: SpendMode }) {
   return {
     id: account.id,
     role: account.role,
@@ -81,6 +90,7 @@ function publicAccount(account: { id: string; role: Role; orgId: string; name: s
     otpEnabled: Boolean(account.otpSecret),
     staffRole: account.role === 'org' ? account.staffRole || 'admin' : account.staffRole,
     primary: Boolean(account.primary),
+    spendMode: account.spendMode === 'prefunded' ? 'prefunded' : 'shared',
   };
 }
 
@@ -92,6 +102,32 @@ function staffRank(actor: Actor): StaffRole | 'hq' {
 
 function allowStaff(actor: Actor, roles: Array<StaffRole | 'hq'>) {
   return roles.includes(staffRank(actor));
+}
+
+function readFunding(body: unknown): { mode: FundingMode; prefundedBudget: number; error?: undefined } | { error: string; mode?: undefined; prefundedBudget?: undefined } {
+  const src = body && typeof body === 'object' ? body as Record<string, unknown> : {};
+  const raw = src.fundingMode;
+  const mode: FundingMode = raw === 'prefunded' || raw === 'split' || raw === 'shared' ? raw : 'shared';
+  const prefundedBudget = src.prefundedBudget == null || src.prefundedBudget === '' ? 0 : Number(src.prefundedBudget);
+  if (!Number.isFinite(prefundedBudget) || prefundedBudget < 0) return { error: 'prefunded_min' };
+  if (mode === 'split' && prefundedBudget <= 0) return { error: 'prefunded_min' };
+  return { mode, prefundedBudget: money(prefundedBudget) };
+}
+
+function readBrand(db: ReturnType<typeof readDb>, selfId: string, value: unknown): { fields: Pick<Org, 'brandName' | 'logoUrl' | 'slug' | 'customDomain' | 'accentColor'>; error?: undefined } | { error: string; fields?: undefined } {
+  const src = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const brandName = String(src.brandName ?? '').trim().slice(0, 80);
+  const logoUrl = String(src.logoUrl ?? '').trim().slice(0, 300);
+  const slug = String(src.slug ?? '').trim().toLowerCase();
+  const customDomain = String(src.customDomain ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+  const accentColor = String(src.accentColor ?? '').trim();
+  if (slug && !/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(slug)) return { error: 'slug_invalid' };
+  if (customDomain && (customDomain.length > 253 || !/^[a-z0-9.-]+$/.test(customDomain))) return { error: 'domain_invalid' };
+  if (logoUrl && !logoUrl.startsWith('/') && !/^https?:\/\//.test(logoUrl)) return { error: 'logo_invalid' };
+  if (accentColor && !/^#[0-9a-fA-F]{6}$/.test(accentColor)) return { error: 'accent_invalid' };
+  if (slug && db.orgs.some((org) => org.id !== selfId && (org.slug || '').toLowerCase() === slug)) return { error: 'slug_exists' };
+  if (customDomain && db.orgs.some((org) => org.id !== selfId && (org.customDomain || '').toLowerCase() === customDomain)) return { error: 'domain_exists' };
+  return { fields: { brandName, logoUrl, slug, customDomain, accentColor } };
 }
 
 function readProfile(value: unknown): OrgProfile {
@@ -121,12 +157,53 @@ function readProfile(value: unknown): OrgProfile {
   };
 }
 
-function sessionBody(account: { id: string; role: Role; orgId: string; name: string; email: string; otpSecret?: string }, org?: { name: string; level: OrgLevel }) {
+function shownBrand(db: ReturnType<typeof readDb>, org: Org) {
+  let brandName = '';
+  let logoUrl = '';
+  let accentColor = '';
+  for (const node of chainOf(db, org.id)) {
+    if (node.brandName) brandName = node.brandName;
+    if (node.logoUrl) logoUrl = node.logoUrl;
+    if (node.accentColor) accentColor = node.accentColor;
+  }
+  return { brandName: brandName || org.name || 'ICOCARD', logoUrl, accentColor };
+}
+
+function sessionBody(account: { id: string; role: Role; orgId: string; name: string; email: string; otpSecret?: string; spendMode?: SpendMode; staffRole?: StaffRole }, org?: Org) {
+  const db = readDb();
+  const brand = org ? shownBrand(db, org) : { brandName: 'ICOCARD', logoUrl: '', accentColor: '' };
   return {
     token: sign(account),
-    account: { ...publicAccount(account), orgName: org?.name ?? '', level: org?.level ?? 'hq' },
+    account: {
+      ...publicAccount(account),
+      orgName: org?.name ?? '',
+      level: org?.level ?? 'hq',
+      brandName: brand.brandName,
+      logoUrl: brand.logoUrl,
+      accentColor: brand.accentColor,
+      menus: account.role === 'hq' ? [...MENU_IDS] : roleMenus(db)[account.staffRole || 'admin'],
+    },
   };
 }
+
+router.get('/brand', (req, res) => {
+  const host = String(req.query.host ?? '').trim().toLowerCase().split(':')[0];
+  const db = readDb();
+  const org = db.orgs.find((item) => {
+    const domain = (item.customDomain || '').trim().toLowerCase();
+    if (domain && domain === host) return true;
+    const slug = (item.slug || '').trim().toLowerCase();
+    return Boolean(slug) && (host === slug || host.startsWith(`${slug}.`));
+  });
+  const brand = org ? shownBrand(db, org) : { brandName: 'ICOCARD', logoUrl: '', accentColor: '' };
+  res.json({
+    name: brand.brandName,
+    logoUrl: brand.logoUrl,
+    slug: org?.slug || '',
+    accentColor: brand.accentColor,
+    matched: Boolean(org),
+  });
+});
 
 router.post('/auth/login', (req, res) => {
   const email = String(req.body?.email ?? '').trim().toLowerCase();
@@ -210,9 +287,73 @@ router.get('/session', (req, res) => {
   const org = db.orgs.find((item) => item.id === actor.orgId);
   if (!account || !org) return res.status(401).json({ error: 'login_required' });
   res.json({
-    account: { ...publicAccount(account), orgName: org.name, level: org.level },
+    account: {
+      ...publicAccount(account),
+      orgName: org.name,
+      level: org.level,
+      ...shownBrand(db, org),
+      menus: account.role === 'hq' ? [...MENU_IDS] : roleMenus(db)[account.staffRole || 'admin'],
+    },
     ip: clientIp(req),
     feeRate: db.feeRate,
+  });
+});
+
+router.get('/access', (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || actor.role === 'user') return res.status(403).json({ error: 'operator_only' });
+  const db = readDb();
+  res.json({
+    catalog: MENU_IDS,
+    menus: roleMenus(db),
+    canEdit: actor.role === 'hq',
+  });
+});
+
+router.put('/access', (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || actor.role !== 'hq') return res.status(403).json({ error: 'hq_only' });
+  const db = readDb();
+  const incoming = req.body?.menus && typeof req.body.menus === 'object' ? req.body.menus as Record<string, unknown> : null;
+  if (!incoming) return res.status(400).json({ error: 'menus_required' });
+  const roles: StaffRole[] = ['admin', 'accountant', 'general', 'operator'];
+  const next: Partial<Record<StaffRole, string[]>> = {};
+  for (const role of roles) {
+    const list = Array.isArray(incoming[role]) ? incoming[role].map((id) => String(id)) : [];
+    const picked = list.filter((id) => (MENU_IDS as readonly string[]).includes(id));
+    if (!picked.includes('dashboard')) picked.unshift('dashboard');
+    next[role] = picked;
+  }
+  db.menuAccess = next;
+  writeDb(db);
+  res.json({ ok: true, menus: roleMenus(db) });
+});
+
+router.get('/platform', (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || actor.role === 'user') return res.status(403).json({ error: 'operator_only' });
+  const db = readDb();
+  const root = db.orgs.find((org) => org.id === actor.orgId);
+  if (!root) return res.status(404).json({ error: 'org_missing' });
+  const scope = descendantIds(db, root.id);
+  const base = 'business.icocard.net';
+  res.json({
+    publicHost: base,
+    chainId: wirexCorporate.chainId,
+    apiBase: wirexCorporate.apiBase,
+    orgs: db.orgs.filter((org) => scope.has(org.id)).map((org) => {
+      const domain = (org.customDomain || '').trim().toLowerCase();
+      const slug = (org.slug || '').trim().toLowerCase();
+      const host = domain || (slug ? `${slug}.${base}` : base);
+      return {
+        id: org.id,
+        name: org.name,
+        level: org.level,
+        slug,
+        customDomain: domain,
+        loginHost: host,
+      };
+    }),
   });
 });
 
@@ -258,7 +399,7 @@ router.patch('/hq', (req, res) => {
   if (!Number.isFinite(limitBudget) || limitBudget < 0) return res.status(400).json({ error: 'limit_min' });
   const stats = orgStats(db, hq);
   const usedFloorCards = stats.allocatedCards + stats.cardsIssued;
-  const usedFloorLimit = money(stats.allocatedLimit + stats.limitUsed);
+  const usedFloorLimit = Math.max(money(stats.allocatedLimit + stats.limitUsed), fundedFloor(db, hq));
   if (cardQuota < usedFloorCards) return res.status(400).json({ error: 'cards_floor' });
   if (limitBudget < usedFloorLimit) return res.status(400).json({ error: 'limit_floor' });
   hq.cardQuota = cardQuota;
@@ -295,6 +436,10 @@ router.post('/orgs', (req, res) => {
   const stats = orgStats(db, parent);
   if (cardQuota > stats.remainingCards) return res.status(400).json({ error: 'cards_over' });
   if (limitBudget > stats.remainingLimit) return res.status(400).json({ error: 'limit_over' });
+  const funding = readFunding(req.body);
+  if (funding.error || funding.mode == null || funding.prefundedBudget == null) return res.status(400).json({ error: funding.error || 'prefunded_min' });
+  const brand = readBrand(db, '', req.body?.brand);
+  if (brand.error || !brand.fields) return res.status(400).json({ error: brand.error || 'domain_invalid' });
   const orgId = crypto.randomUUID();
   db.orgs.push({
     id: orgId,
@@ -304,6 +449,9 @@ router.post('/orgs', (req, res) => {
     cardQuota,
     limitBudget: money(limitBudget),
     profile: readProfile(req.body?.profile),
+    fundingMode: funding.mode,
+    prefundedBudget: funding.prefundedBudget,
+    ...brand.fields,
   });
   db.accounts.push({
     id: crypto.randomUUID(),
@@ -328,7 +476,9 @@ router.patch('/orgs/:id', (req, res) => {
   const wantsName = req.body?.name != null;
   const wantsQuota = req.body?.cardQuota != null || req.body?.limitBudget != null;
   const wantsProfile = req.body?.profile != null;
-  if (!wantsName && !wantsQuota && !wantsProfile) return res.status(400).json({ error: 'org_name_required' });
+  const wantsFunding = req.body?.fundingMode != null || req.body?.prefundedBudget != null;
+  const wantsBrand = req.body?.brand != null;
+  if (!wantsName && !wantsQuota && !wantsProfile && !wantsFunding && !wantsBrand) return res.status(400).json({ error: 'org_name_required' });
   if ((wantsName || wantsProfile) && !allowStaff(actor, ['hq', 'admin'])) return res.status(403).json({ error: 'staff_forbidden' });
   if (wantsName) {
     const name = String(req.body.name).trim();
@@ -348,11 +498,30 @@ router.patch('/orgs/:id', (req, res) => {
     const parentRoomCards = orgStats(db, parent).remainingCards + org.cardQuota;
     const parentRoomLimit = money(orgStats(db, parent).remainingLimit + org.limitBudget);
     const ownFloorCards = childrenOf(db, org.id).reduce((sum, child) => sum + child.cardQuota, 0) + issuedCount(db, org.id);
-    const ownFloorLimit = money(childrenOf(db, org.id).reduce((sum, child) => sum + child.limitBudget, 0) + usedAmount(db, org.id));
+    const ownFloorLimit = Math.max(money(childrenOf(db, org.id).reduce((sum, child) => sum + child.limitBudget, 0) + usedAmount(db, org.id)), fundedFloor(db, org));
     if (cardQuota > parentRoomCards || cardQuota < ownFloorCards) return res.status(400).json({ error: 'cards_range' });
     if (limitBudget > parentRoomLimit || limitBudget < ownFloorLimit) return res.status(400).json({ error: 'limit_range' });
     org.cardQuota = cardQuota;
     org.limitBudget = money(limitBudget);
+  }
+  if (wantsFunding) {
+    if (!allowStaff(actor, ['hq', 'admin'])) return res.status(403).json({ error: 'staff_forbidden' });
+    const funding = readFunding({ ...org, ...req.body });
+    if (funding.error || funding.mode == null || funding.prefundedBudget == null) return res.status(400).json({ error: funding.error || 'prefunded_min' });
+    const problem = fundingFits(db, org, funding.mode, funding.prefundedBudget);
+    if (problem) return res.status(400).json({ error: problem });
+    org.fundingMode = funding.mode;
+    org.prefundedBudget = funding.prefundedBudget;
+  }
+  if (wantsBrand) {
+    if (!allowStaff(actor, ['hq', 'admin'])) return res.status(403).json({ error: 'staff_forbidden' });
+    const brand = readBrand(db, org.id, req.body.brand);
+    if (brand.error || !brand.fields) return res.status(400).json({ error: brand.error || 'domain_invalid' });
+    org.brandName = brand.fields.brandName;
+    org.logoUrl = brand.fields.logoUrl;
+    org.slug = brand.fields.slug;
+    org.customDomain = brand.fields.customDomain;
+    org.accentColor = brand.fields.accentColor;
   }
   writeDb(db);
   res.json({ ok: true });
@@ -379,6 +548,7 @@ router.post('/accounts', (req, res) => {
   const staffRoles: StaffRole[] = ['admin', 'accountant', 'general', 'operator'];
   const staffRole = staffRoles.includes(req.body?.staffRole) ? req.body.staffRole as StaffRole : 'operator';
   if (db.accounts.some((account) => account.email === email)) return res.status(400).json({ error: 'email_exists' });
+  const spendMode: SpendMode = req.body?.spendMode === 'prefunded' ? 'prefunded' : 'shared';
   db.accounts.push({
     id: crypto.randomUUID(),
     role,
@@ -388,6 +558,7 @@ router.post('/accounts', (req, res) => {
     passwordHash: hashPassword(password),
     staffRole: role === 'org' ? staffRole : undefined,
     primary: false,
+    spendMode: role === 'user' ? spendMode : undefined,
   });
   writeDb(db);
   res.status(201).json({ ok: true });
@@ -407,9 +578,8 @@ function bill(db: ReturnType<typeof readDb>, card: BizCard, codes: string[], bas
   if (!org) return { error: 'org_missing' };
   const lines = feeLines(db, card.orgId, codes, base);
   const { orgFee, userFee } = splitFees(lines);
-  if (money(base + orgFee) > orgStats(db, org).remainingLimit) {
-    return { error: 'limit_short' };
-  }
+  const short = chargeFits(db, org, card, base, orgFee);
+  if (short) return { error: short };
   const createdAt = new Date().toISOString();
   for (const line of lines) {
     db.charges.push({
@@ -571,6 +741,12 @@ router.post('/cards', (req, res) => {
   const org = db.orgs.find((item) => item.id === user.orgId);
   if (!org) return res.status(404).json({ error: 'org_missing' });
   if (orgStats(db, org).remainingCards < 1) return res.status(400).json({ error: 'cards_empty' });
+  const spendMode: SpendMode = req.body?.spendMode === 'prefunded' || req.body?.spendMode === 'shared'
+    ? req.body.spendMode
+    : user.spendMode === 'prefunded' ? 'prefunded' : 'shared';
+  const cardLimit = Number(req.body?.cardLimit);
+  const reserveError = reserveFits(db, org, spendMode, cardLimit);
+  if (reserveError) return res.status(400).json({ error: reserveError });
   const card: BizCard = {
     id: crypto.randomUUID(),
     orgId: org.id,
@@ -578,6 +754,8 @@ router.post('/cards', (req, res) => {
     name,
     format,
     status: 'active',
+    spendMode,
+    cardLimit: money(cardLimit),
     createdAt: new Date().toISOString(),
   };
   const billed = bill(db, card, ['issue'], 0);
@@ -663,6 +841,13 @@ router.post('/cards/:id/reissue', (req, res) => {
     found.card.status = previous;
     return res.status(400).json({ error: 'reissue_cards' });
   }
+  if (found.card.cardLimit != null) {
+    const reserveError = reserveFits(found.db, org, found.card.spendMode === 'prefunded' ? 'prefunded' : 'shared', found.card.cardLimit);
+    if (reserveError) {
+      found.card.status = previous;
+      return res.status(400).json({ error: reserveError });
+    }
+  }
   const next: BizCard = {
     id: crypto.randomUUID(),
     orgId: found.card.orgId,
@@ -670,6 +855,8 @@ router.post('/cards/:id/reissue', (req, res) => {
     name: found.card.name,
     format: found.card.format,
     status: 'active',
+    spendMode: found.card.spendMode,
+    cardLimit: found.card.cardLimit,
     createdAt: new Date().toISOString(),
   };
   const billed = bill(found.db, next, ['reissue'], 0);

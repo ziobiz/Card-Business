@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LangMenu from '../components/LangMenu';
@@ -24,6 +24,15 @@ export default function AdminLogin() {
   const [pending, setPending] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [brand, setBrand] = useState({ name: 'ICOCARD', logoUrl: '', accentColor: '' });
+
+  useEffect(() => {
+    const host = window.location.hostname;
+    void fetch(`${API}/api/brand?host=${encodeURIComponent(host)}`)
+      .then((res) => res.json() as Promise<{ name?: string; logoUrl?: string; accentColor?: string }>)
+      .then((row) => setBrand({ name: row.name || 'ICOCARD', logoUrl: row.logoUrl || '', accentColor: row.accentColor || '' }))
+      .catch(() => undefined);
+  }, []);
 
   const finish = (row: LoginResult) => {
     if (!row.token || !row.account) return;
@@ -78,7 +87,7 @@ export default function AdminLogin() {
       <div className="ac-panel">
         <div className="ac-panel-inner">
           <div className="ac-lang"><LangMenu /></div>
-          <div className="ac-logo"><img src="/brand/icocard-logo.png" alt="ICOCARD" /></div>
+          <div className="ac-logo"><img src={brand.logoUrl || '/brand/icocard-logo.png'} alt={brand.name} /></div>
           <section className="ac-notice">
             <h3>{t('auth.noticeTitle')}</h3>
             <p>{t('auth.noticeBody')}</p>
@@ -97,9 +106,9 @@ export default function AdminLogin() {
                 <small>{t('auth.otpHint')}</small>
               </label>
             ) : null}
-            <button className="ac-submit" type="submit" disabled={loading}>{loading ? t('auth.wait') : t('auth.submit')}</button>
+            <button className="ac-submit" type="submit" disabled={loading} style={brand.accentColor ? { background: brand.accentColor } : undefined}>{loading ? t('auth.wait') : t('auth.submit')}</button>
           </form>
-          <p className="ac-copy">ICOCARD</p>
+          <p className="ac-copy">{brand.name}</p>
         </div>
       </div>
     </div>

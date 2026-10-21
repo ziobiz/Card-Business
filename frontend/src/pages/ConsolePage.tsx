@@ -19,10 +19,22 @@ type OrgNode = {
   allocatedLimit: number;
   remainingCards: number;
   remainingLimit: number;
+  fundingMode?: 'prefunded' | 'shared' | 'split';
+  prefundedBudget?: number;
+  prefundedPool?: number;
+  sharedPool?: number;
+  reserved?: number;
+  prefundedFree?: number;
+  sharedRemaining?: number;
+  brandName?: string;
+  logoUrl?: string;
+  slug?: string;
+  customDomain?: string;
+  accentColor?: string;
   children: OrgNode[];
 };
-type Person = { id: string; role: string; orgId: string; name: string; email: string; staffRole?: string; primary?: boolean };
-type CardRow = { id: string; orgId: string; userId: string; name: string; format: string; status: string; monthKey?: string };
+type Person = { id: string; role: string; orgId: string; name: string; email: string; staffRole?: string; primary?: boolean; spendMode?: string };
+type CardRow = { id: string; orgId: string; userId: string; name: string; format: string; status: string; monthKey?: string; spendMode?: string; cardLimit?: number };
 type SpendRow = { id: string; cardId: string; orgId: string; userId: string; merchant: string; amount: number; fee: number; orgFee?: number; userFee?: number; createdAt: string };
 type FeeEvent = { id: string; name: string; code: string };
 type Overview = { feeRate: number; tree: OrgNode; users: Person[]; operators: Person[]; staff?: Person[]; cards: CardRow[]; spends: SpendRow[]; events: FeeEvent[] };
@@ -57,8 +69,10 @@ export default function ConsolePage() {
   const [poolCards, setPoolCards] = useState('45');
   const [poolLimit, setPoolLimit] = useState('100000');
   const [orgForm, setOrgForm] = useState({ name: '', cardQuota: '5', limitBudget: '1000' });
-  const [personForm, setPersonForm] = useState({ role: 'user', staffRole: 'operator', name: '', email: '', password: '' });
-  const [cardForm, setCardForm] = useState({ userId: '', name: 'Team card', format: 'virtual' });
+  const [personForm, setPersonForm] = useState({ role: 'user', staffRole: 'operator', name: '', email: '', password: '', spendMode: 'shared' });
+  const [cardForm, setCardForm] = useState({ userId: '', name: 'Team card', format: 'virtual', cardLimit: '100', spendMode: 'shared' });
+  const [fundForm, setFundForm] = useState({ fundingMode: 'shared', prefundedBudget: '0' });
+  const [brandForm, setBrandForm] = useState({ brandName: '', logoUrl: '', slug: '', customDomain: '', accentColor: '' });
   const [spendForm, setSpendForm] = useState({ cardId: '', merchant: '', amount: '' });
   const [atmForm, setAtmForm] = useState({ cardId: '', amount: '' });
   const [chargeForm, setChargeForm] = useState({ cardId: '', code: '', amount: '' });
@@ -85,7 +99,16 @@ export default function ConsolePage() {
   const cardsHere = data && selected ? data.cards.filter((card) => card.orgId === selected.id && card.status !== 'closed') : [];
 
   useEffect(() => {
-    if (selected) setOrgName(selected.name);
+    if (!selected) return;
+    setOrgName(selected.name);
+    setFundForm({ fundingMode: selected.fundingMode || 'shared', prefundedBudget: String(selected.prefundedBudget ?? 0) });
+    setBrandForm({
+      brandName: selected.brandName || '',
+      logoUrl: selected.logoUrl || '',
+      slug: selected.slug || '',
+      customDomain: selected.customDomain || '',
+      accentColor: selected.accentColor || '',
+    });
   }, [selected]);
 
   const run = async (path: string, body: unknown) => {
@@ -122,7 +145,42 @@ export default function ConsolePage() {
             <article><span>{t('stats.cards')}</span><strong>{selected.remainingCards}</strong><small>{t('stats.cardsDetail', { quota: selected.cardQuota, issued: selected.cardsIssued })}</small></article>
             <article><span>{t('stats.limit')}</span><strong>{usd(selected.remainingLimit)}</strong><small>{t('stats.limitDetail', { budget: usd(selected.limitBudget), used: usd(selected.limitUsed) })}</small></article>
             <article><span>{t('stats.fee')}</span><strong>{t('stats.channel')}</strong><small>{t('stats.feeHint')}</small></article>
+            <article><span>{t('fund.mode')}</span><strong>{t(`fund.${selected.fundingMode || 'shared'}`)}</strong><small>{t('fund.pools', { prefunded: usd(selected.prefundedPool || 0), shared: usd(selected.sharedPool || 0) })}</small></article>
           </section>
+
+          <form className="panel" onSubmit={(event) => { event.preventDefault(); void run(`/api/orgs/${selected.id}`, { fundingMode: fundForm.fundingMode, prefundedBudget: Number(fundForm.prefundedBudget) }); }}>
+            <h2>{t('fund.title')}</h2>
+            <p className="hint">{t('fund.lead')}</p>
+            <div className="fields">
+              <label>{t('fund.mode')}
+                <select value={fundForm.fundingMode} onChange={(e) => setFundForm({ ...fundForm, fundingMode: e.target.value })}>
+                  <option value="prefunded">{t('fund.prefunded')}</option>
+                  <option value="shared">{t('fund.shared')}</option>
+                  <option value="split">{t('fund.split')}</option>
+                </select>
+              </label>
+              {fundForm.fundingMode === 'split' ? (
+                <label>{t('fund.prefundedAmount')}<input value={fundForm.prefundedBudget} onChange={(e) => setFundForm({ ...fundForm, prefundedBudget: e.target.value })} /></label>
+              ) : null}
+            </div>
+            <p className="hint">{t(`fund.help.${fundForm.fundingMode}`)}</p>
+            <p className="hint">{t('fund.live', { reserved: usd(selected.reserved || 0), free: usd(selected.prefundedFree || 0), sharedLeft: usd(selected.sharedRemaining || 0) })}</p>
+            <button type="submit">{t('fund.save')}</button>
+          </form>
+
+          <form className="panel" onSubmit={(event) => { event.preventDefault(); void run(`/api/orgs/${selected.id}`, { brand: brandForm }); }}>
+            <h2>{t('brand.title')}</h2>
+            <p className="hint">{t('brand.lead')}</p>
+            <div className="fields">
+              <label>{t('brand.name')}<input value={brandForm.brandName} onChange={(e) => setBrandForm({ ...brandForm, brandName: e.target.value })} /></label>
+              <label>{t('brand.logo')}<input value={brandForm.logoUrl} onChange={(e) => setBrandForm({ ...brandForm, logoUrl: e.target.value })} /></label>
+              <label>{t('brand.slug')}<input value={brandForm.slug} onChange={(e) => setBrandForm({ ...brandForm, slug: e.target.value })} /></label>
+              <label>{t('brand.domain')}<input value={brandForm.customDomain} onChange={(e) => setBrandForm({ ...brandForm, customDomain: e.target.value })} /></label>
+              <label>{t('brand.accent')}<input value={brandForm.accentColor} onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })} /></label>
+            </div>
+            <p className="hint">{t('brand.inherit')}</p>
+            <button type="submit">{t('brand.save')}</button>
+          </form>
 
           {data.tree.level === 'hq' && selected.level === 'hq' ? (
             <form className="panel" onSubmit={savePool}>
@@ -194,6 +252,14 @@ export default function ConsolePage() {
                 <label>{t('account.name')}<input value={personForm.name} onChange={(e) => setPersonForm({ ...personForm, name: e.target.value })} required /></label>
                 <label>{t('account.email')}<input value={personForm.email} onChange={(e) => setPersonForm({ ...personForm, email: e.target.value })} required /></label>
                 <label>{t('account.password')}<input value={personForm.password} onChange={(e) => setPersonForm({ ...personForm, password: e.target.value })} required /></label>
+                {personForm.role === 'user' && selected.fundingMode === 'split' ? (
+                  <label>{t('fund.person')}
+                    <select value={personForm.spendMode} onChange={(e) => setPersonForm({ ...personForm, spendMode: e.target.value })}>
+                      <option value="prefunded">{t('fund.prefunded')}</option>
+                      <option value="shared">{t('fund.shared')}</option>
+                    </select>
+                  </label>
+                ) : null}
               </div>
               <button type="submit">{t('account.save')}</button>
             </form>
@@ -202,7 +268,7 @@ export default function ConsolePage() {
               <table>
                 <tbody>
                   {staffHere.map((person) => (
-                    <tr key={person.id}><td>{person.name}</td><td>{person.email}</td><td>{person.staffRole || person.role}</td><td>{person.primary ? t('staff.primary') : ''}</td></tr>
+                    <tr key={person.id}><td>{person.name}</td><td>{person.email}</td><td>{person.staffRole || person.role}</td><td>{person.role === 'user' ? t(`fund.${person.spendMode || 'shared'}`) : ''}</td><td>{person.primary ? t('staff.primary') : ''}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -210,8 +276,9 @@ export default function ConsolePage() {
           </> : null}
 
           {section === 'cards' && usersHere.length > 0 ? (
-            <form className="panel" onSubmit={(event) => { event.preventDefault(); void run('/api/cards', cardForm); }}>
+            <form className="panel" onSubmit={(event) => { event.preventDefault(); const user = usersHere.find((item) => item.id === cardForm.userId); void run('/api/cards', { ...cardForm, cardLimit: Number(cardForm.cardLimit), spendMode: selected.fundingMode === 'split' ? (cardForm.spendMode || user?.spendMode || 'shared') : selected.fundingMode === 'prefunded' ? 'prefunded' : 'shared' }); }}>
               <h2>{t('card.issue')}</h2>
+              <p className="hint">{t(`fund.help.${selected.fundingMode || 'shared'}`)}</p>
               <div className="fields">
                 <label>{t('card.user')}
                   <select value={cardForm.userId} onChange={(e) => setCardForm({ ...cardForm, userId: e.target.value })} required>
@@ -226,6 +293,15 @@ export default function ConsolePage() {
                     <option value="plastic">{t('card.plastic')}</option>
                   </select>
                 </label>
+                <label>{t('fund.cardLimit')}<input value={cardForm.cardLimit} onChange={(e) => setCardForm({ ...cardForm, cardLimit: e.target.value })} required /></label>
+                {selected.fundingMode === 'split' ? (
+                  <label>{t('fund.person')}
+                    <select value={cardForm.spendMode} onChange={(e) => setCardForm({ ...cardForm, spendMode: e.target.value })}>
+                      <option value="prefunded">{t('fund.prefunded')}</option>
+                      <option value="shared">{t('fund.shared')}</option>
+                    </select>
+                  </label>
+                ) : null}
               </div>
               <button type="submit">{t('card.submit')}</button>
             </form>
@@ -239,7 +315,7 @@ export default function ConsolePage() {
                 <label>{t('spend.card')}
                   <select value={spendForm.cardId} onChange={(e) => setSpendForm({ ...spendForm, cardId: e.target.value })} required>
                     <option value="">{t('card.pick')}</option>
-                    {cardsHere.map((card) => <option key={card.id} value={card.id}>{card.name}</option>)}
+                    {cardsHere.map((card) => <option key={card.id} value={card.id}>{card.name} · {t(`fund.${card.spendMode || 'shared'}`)} {usd(card.cardLimit || 0)}</option>)}
                   </select>
                 </label>
                 <label>{t('spend.merchant')}<input value={spendForm.merchant} onChange={(e) => setSpendForm({ ...spendForm, merchant: e.target.value })} /></label>
@@ -253,11 +329,13 @@ export default function ConsolePage() {
             <section className="panel">
               <h2>{t('card.state')}</h2>
               <table>
-                <thead><tr><th>{t('card.colCard')}</th><th>{t('card.colStatus')}</th><th></th></tr></thead>
+                <thead><tr><th>{t('card.colCard')}</th><th>{t('fund.person')}</th><th>{t('fund.cardLimit')}</th><th>{t('card.colStatus')}</th><th></th></tr></thead>
                 <tbody>
                   {cardsHere.map((card) => (
                     <tr key={card.id}>
                       <td>{card.name}</td>
+                      <td>{t(`fund.${card.spendMode || 'shared'}`)}</td>
+                      <td>{usd(card.cardLimit || 0)}</td>
                       <td>{card.status === 'active' ? t('status.active') : t('status.blocked')}{card.monthKey ? ` · ${t('status.monthly', { month: card.monthKey })}` : ''}</td>
                       <td className="card-actions">
                         {card.status === 'active' ? <button type="button" onClick={() => void run(`/api/cards/${card.id}/block`, {})}>{t('card.block')}</button> : null}

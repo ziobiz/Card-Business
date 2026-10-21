@@ -68,6 +68,7 @@ const ROLE_MENUS: Record<string, string[]> = {
 
 function allowedIds(account: SessionAccount) {
   if (account.role === 'hq') return ROLE_MENUS.hq;
+  if (account.menus?.length) return account.menus;
   return ROLE_MENUS[account.staffRole || 'admin'] || ROLE_MENUS.admin;
 }
 
@@ -151,7 +152,7 @@ export default function AdminShell() {
     <div className={`hq-shell${collapsed ? ' is-collapsed' : ''}${tablet ? ' is-tablet' : ''}`}>
       <aside className="hq-side">
         <Link to="/admin/dashboard" className="hq-brand">
-          <img src={theme === 'light' ? '/brand/icocard-logo.png' : '/brand/icocard-logo-dark.png'} alt="ICOCARD" />
+          <img src={account.logoUrl || (theme === 'light' ? '/brand/icocard-logo.png' : '/brand/icocard-logo-dark.png')} alt={account.brandName || 'ICOCARD'} />
         </Link>
         <div className="hq-fold-wrap">
           <button

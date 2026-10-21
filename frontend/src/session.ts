@@ -12,6 +12,10 @@ export type SessionAccount = {
   orgName: string;
   level: 'hq' | 'large' | 'middle' | 'small';
   staffRole?: 'admin' | 'accountant' | 'general' | 'operator';
+  brandName?: string;
+  logoUrl?: string;
+  accentColor?: string;
+  menus?: string[];
 };
 
 export function saveToken(token: string) {

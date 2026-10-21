@@ -179,6 +179,7 @@ export default function FeeBoard({ selectedId }: { selectedId: string }) {
         <h2>{t('fee.title')}</h2>
         <p className="hint">{t('fee.lead')}</p>
         <p className="hint">{t('fee.scope')}</p>
+        <p className="hint">{t('fee.waterfall', { chain: selectedChain.map((org) => `${org.level === 'hq' ? 'HQ' : org.level === 'large' ? 'BL' : org.level === 'middle' ? 'ML' : 'SL'} ${org.name}`).join(' → ') })}</p>
         <label className="sample">{t('fee.sample')}
           <input value={sample} onChange={(e) => setSample(e.target.value)} />
         </label>

@@ -23,6 +23,8 @@ const empty = {
   zip: '', address: '', addressDetail: '', salesInfo: 'online', useYn: 'Y', homepage: '', product: '',
   settleName: '', settlePhone: '', wallet: '', network: '', cardQuota: '5', limitBudget: '1000',
   repName: '', repEmail: '', repPassword: '',
+  fundingMode: 'shared', prefundedBudget: '0',
+  brandName: '', logoUrl: '', slug: '', customDomain: '', accentColor: '',
 };
 
 export default function OrgRegisterPage() {
@@ -64,6 +66,9 @@ export default function OrgRegisterPage() {
           limitBudget: Number(form.limitBudget),
           profile: form,
           representative: { name: form.repName, email: form.repEmail, password: form.repPassword },
+          fundingMode: form.fundingMode,
+          prefundedBudget: Number(form.prefundedBudget),
+          brand: { brandName: form.brandName, logoUrl: form.logoUrl, slug: form.slug, customDomain: form.customDomain, accentColor: form.accentColor },
         }),
       });
       setForm(empty);
@@ -121,6 +126,21 @@ export default function OrgRegisterPage() {
           <label>{t('reg.password')}<input type="password" value={form.repPassword} onChange={(e) => set('repPassword', e.target.value)} required minLength={8} /></label>
           <label>{t('reg.cards')}<input value={form.cardQuota} onChange={(e) => set('cardQuota', e.target.value)} /></label>
           <label>{t('reg.limit')}<input value={form.limitBudget} onChange={(e) => set('limitBudget', e.target.value)} /></label>
+          <label>{t('fund.mode')}
+            <select value={form.fundingMode} onChange={(e) => set('fundingMode', e.target.value)}>
+              <option value="prefunded">{t('fund.prefunded')}</option>
+              <option value="shared">{t('fund.shared')}</option>
+              <option value="split">{t('fund.split')}</option>
+            </select>
+          </label>
+          {form.fundingMode === 'split' ? <label>{t('fund.prefundedAmount')}<input value={form.prefundedBudget} onChange={(e) => set('prefundedBudget', e.target.value)} /></label> : null}
+          <p className="hint">{t(`fund.help.${form.fundingMode}`)}</p>
+          <label>{t('brand.name')}<input value={form.brandName} onChange={(e) => set('brandName', e.target.value)} /></label>
+          <label>{t('brand.logo')}<input value={form.logoUrl} onChange={(e) => set('logoUrl', e.target.value)} /></label>
+          <label>{t('brand.slug')}<input value={form.slug} onChange={(e) => set('slug', e.target.value)} /></label>
+          <label>{t('brand.domain')}<input value={form.customDomain} onChange={(e) => set('customDomain', e.target.value)} /></label>
+          <label>{t('brand.accent')}<input value={form.accentColor} onChange={(e) => set('accentColor', e.target.value)} /></label>
+          <p className="hint">{t('brand.inherit')}</p>
         </div>
       </section>
       <section className="reg-card">
