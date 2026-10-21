@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import LangBar from '../components/LangBar';
+import { useDocumentBrand } from '../brandView';
 import { levelCode } from '../levels';
 import { apiAuth, clearToken, isAuthError, type SessionAccount } from '../session';
 
@@ -29,6 +30,8 @@ export default function UserPage() {
       if (isAuthError(e)) navigate('/login', { replace: true });
     });
   }, [navigate]);
+
+  useDocumentBrand(data?.account ?? null);
 
   if (!data) return <div className="user-app"><p className="boot">{error || t('boot')}</p></div>;
 
@@ -83,6 +86,7 @@ export default function UserPage() {
             </tbody>
           </table>
         </section>
+        {data.account?.footerText ? <p className="ac-copy">{data.account.footerText}</p> : null}
       </main>
     </div>
   );

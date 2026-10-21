@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LangMenu from '../components/LangMenu';
 import { API } from '../api';
+import { assetUrl, useDocumentBrand, type BrandView } from '../brandView';
 import { ApiError, apiMessage, homeFor, saveToken, type SessionAccount } from '../session';
 
 type LoginResult = {
@@ -24,13 +25,23 @@ export default function AdminLogin() {
   const [pending, setPending] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [brand, setBrand] = useState({ name: 'ICOCARD', logoUrl: '', accentColor: '' });
+  const [brand, setBrand] = useState<BrandView>({ brandName: 'ICOCARD', siteName: 'ICOCARD' });
+  useDocumentBrand(brand);
 
   useEffect(() => {
     const host = window.location.hostname;
     void fetch(`${API}/api/brand?host=${encodeURIComponent(host)}`)
-      .then((res) => res.json() as Promise<{ name?: string; logoUrl?: string; accentColor?: string }>)
-      .then((row) => setBrand({ name: row.name || 'ICOCARD', logoUrl: row.logoUrl || '', accentColor: row.accentColor || '' }))
+      .then((res) => res.json() as Promise<BrandView & { name?: string }>)
+      .then((row) => setBrand({
+        brandName: row.brandName || row.name || 'ICOCARD',
+        logoUrl: row.logoUrl || '',
+        loginLogoUrl: row.loginLogoUrl || '',
+        loginBackgroundUrl: row.loginBackgroundUrl || '',
+        faviconUrl: row.faviconUrl || '',
+        siteName: row.siteName || row.name || 'ICOCARD',
+        footerText: row.footerText || '',
+        accentColor: row.accentColor || '',
+      }))
       .catch(() => undefined);
   }, []);
 
@@ -83,11 +94,11 @@ export default function AdminLogin() {
 
   return (
     <div className="ac-chrome">
-      <div className="ac-hero" style={{ backgroundImage: 'url(/brand/admin-login-wave-default.jpg)' }} />
+      <div className="ac-hero" style={{ backgroundImage: `url(${assetUrl(brand.loginBackgroundUrl) || '/brand/admin-login-wave-default.jpg'})` }} />
       <div className="ac-panel">
         <div className="ac-panel-inner">
           <div className="ac-lang"><LangMenu /></div>
-          <div className="ac-logo"><img src={brand.logoUrl || '/brand/icocard-logo.png'} alt={brand.name} /></div>
+          <div className="ac-logo"><img src={assetUrl(brand.loginLogoUrl || brand.logoUrl) || '/brand/icocard-logo.png'} alt={brand.brandName || 'ICOCARD'} /></div>
           <section className="ac-notice">
             <h3>{t('auth.noticeTitle')}</h3>
             <p>{t('auth.noticeBody')}</p>
@@ -108,7 +119,7 @@ export default function AdminLogin() {
             ) : null}
             <button className="ac-submit" type="submit" disabled={loading} style={brand.accentColor ? { background: brand.accentColor } : undefined}>{loading ? t('auth.wait') : t('auth.submit')}</button>
           </form>
-          <p className="ac-copy">{brand.name}</p>
+          <p className="ac-copy">{brand.footerText || brand.siteName || brand.brandName}</p>
         </div>
       </div>
     </div>

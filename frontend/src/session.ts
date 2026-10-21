@@ -14,6 +14,11 @@ export type SessionAccount = {
   staffRole?: 'admin' | 'accountant' | 'general' | 'operator';
   brandName?: string;
   logoUrl?: string;
+  loginLogoUrl?: string;
+  loginBackgroundUrl?: string;
+  faviconUrl?: string;
+  siteName?: string;
+  footerText?: string;
   accentColor?: string;
   menus?: string[];
 };

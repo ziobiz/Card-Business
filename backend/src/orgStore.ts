@@ -8,6 +8,7 @@ export type Role = 'hq' | 'org' | 'user';
 export type StaffRole = 'admin' | 'accountant' | 'general' | 'operator';
 export type FundingMode = 'prefunded' | 'shared' | 'split';
 export type SpendMode = 'prefunded' | 'shared';
+export type BrandMode = 'follow' | 'custom';
 
 export type OrgProfile = {
   bizNo: string;
@@ -41,8 +42,14 @@ export type Org = {
   profile?: OrgProfile;
   fundingMode?: FundingMode;
   prefundedBudget?: number;
+  brandMode?: BrandMode;
   brandName?: string;
   logoUrl?: string;
+  loginLogoUrl?: string;
+  loginBackgroundUrl?: string;
+  faviconUrl?: string;
+  siteName?: string;
+  footerText?: string;
   slug?: string;
   customDomain?: string;
   accentColor?: string;

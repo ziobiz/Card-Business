@@ -1,19 +1,35 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { API } from '../api';
+import { assetUrl, type BrandView } from '../brandView';
 import { levelCode, type OrgLevel } from '../levels';
-import { apiAuth, isAuthError } from '../session';
+import { apiAuth, authHeaders, isAuthError, apiMessage } from '../session';
 
 type OrgNode = {
   id: string;
   name: string;
   level: OrgLevel;
-  brandName?: string;
-  logoUrl?: string;
-  slug?: string;
-  customDomain?: string;
-  accentColor?: string;
   children: OrgNode[];
+};
+
+type StoredBrand = {
+  brandMode: 'follow' | 'custom';
+  brandName: string;
+  logoUrl: string;
+  loginLogoUrl: string;
+  loginBackgroundUrl: string;
+  faviconUrl: string;
+  siteName: string;
+  footerText: string;
+  slug: string;
+  customDomain: string;
+  accentColor: string;
+};
+
+const emptyBrand: StoredBrand = {
+  brandMode: 'follow', brandName: '', logoUrl: '', loginLogoUrl: '', loginBackgroundUrl: '',
+  faviconUrl: '', siteName: '', footerText: '', slug: '', customDomain: '', accentColor: '',
 };
 
 const ROLES = ['admin', 'accountant', 'general', 'operator'] as const;
@@ -22,23 +38,29 @@ function flatten(node: OrgNode): OrgNode[] {
   return [node, ...node.children.flatMap(flatten)];
 }
 
+function fileName(value: string) {
+  const clean = value.split('?')[0];
+  return clean.slice(clean.lastIndexOf('/') + 1);
+}
+
 export function BrandPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [tree, setTree] = useState<OrgNode | null>(null);
   const [orgId, setOrgId] = useState('');
-  const [form, setForm] = useState({ brandName: '', logoUrl: '', slug: '', customDomain: '', accentColor: '' });
+  const [form, setForm] = useState<StoredBrand>(emptyBrand);
+  const [shown, setShown] = useState<BrandView>({});
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const load = async () => {
+  const loadTree = async () => {
     const data = await apiAuth<{ tree: OrgNode }>('/api/overview');
     setTree(data.tree);
     setOrgId((current) => current || data.tree.id);
   };
 
   useEffect(() => {
-    void load().catch((err: Error) => {
+    void loadTree().catch((err: Error) => {
       setError(err.message);
       if (isAuthError(err)) navigate('/admin/login', { replace: true });
     });
@@ -46,30 +68,74 @@ export function BrandPage() {
 
   const orgs = useMemo(() => (tree ? flatten(tree) : []), [tree]);
   const selected = orgs.find((org) => org.id === orgId);
+  const hq = selected?.level === 'hq';
+  const custom = hq || form.brandMode === 'custom';
 
   useEffect(() => {
-    if (!selected) return;
-    setForm({
-      brandName: selected.brandName || '',
-      logoUrl: selected.logoUrl || '',
-      slug: selected.slug || '',
-      customDomain: selected.customDomain || '',
-      accentColor: selected.accentColor || '',
-    });
-  }, [selected]);
+    if (!orgId) return;
+    void apiAuth<{ stored: StoredBrand; shown: BrandView }>(`/api/orgs/${orgId}/brand`)
+      .then((row) => {
+        setForm(row.stored);
+        setShown(row.shown);
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [orgId]);
+
+  const set = (key: keyof StoredBrand, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
     setSaved(false);
     try {
-      await apiAuth(`/api/orgs/${orgId}`, { method: 'PATCH', body: JSON.stringify({ brand: form }) });
+      const row = await apiAuth<{ stored: StoredBrand; shown: BrandView }>(`/api/orgs/${orgId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ brand: { ...form, brandMode: hq ? 'custom' : form.brandMode } }),
+      });
+      setForm(row.stored);
+      setShown(row.shown);
       setSaved(true);
-      await load();
     } catch (err) {
       setError((err as Error).message);
     }
   };
+
+  const upload = async (kind: 'background' | 'loginLogo' | 'logo' | 'favicon', file: File) => {
+    setError('');
+    setSaved(false);
+    const body = new FormData();
+    body.set('kind', kind);
+    body.set('file', file);
+    const res = await fetch(`${API}/api/orgs/${orgId}/brand-file`, { method: 'POST', headers: authHeaders(), body });
+    const data = await res.json() as { error?: string; stored?: StoredBrand; shown?: BrandView };
+    if (!res.ok) throw new Error(apiMessage(data.error, res.status));
+    if (data.stored) setForm(data.stored);
+    if (data.shown) setShown(data.shown);
+    setSaved(true);
+  };
+
+  const clearImage = async (key: 'logoUrl' | 'loginLogoUrl' | 'loginBackgroundUrl' | 'faviconUrl') => {
+    const row = await apiAuth<{ stored: StoredBrand; shown: BrandView }>(`/api/orgs/${orgId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ brand: { [key]: '' } }),
+    });
+    setForm(row.stored);
+    setShown(row.shown);
+  };
+
+  const fileField = (label: string, key: 'logoUrl' | 'loginLogoUrl' | 'loginBackgroundUrl' | 'faviconUrl', kind: 'background' | 'loginLogo' | 'logo' | 'favicon') => (
+    <label className="brand-file">{label}
+      <span>{form[key] ? fileName(form[key]) : ''}</span>
+      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={!custom} onChange={(event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        void upload(kind, file).catch((err: Error) => setError(err.message));
+      }} />
+      {form[key] ? <img src={assetUrl(form[key])} alt="" /> : null}
+      {custom && form[key] ? <button type="button" onClick={() => void clearImage(key).catch((err: Error) => setError(err.message))}>{t('brand.remove')}</button> : null}
+    </label>
+  );
 
   if (!tree) return <p className="boot">{error || t('boot')}</p>;
 
@@ -77,7 +143,8 @@ export function BrandPage() {
     <form className="panel" onSubmit={save}>
       <h2>{t('menu.brand')}</h2>
       <p className="hint">{t('brand.lead')}</p>
-      <p className="hint">{t('brand.inherit')}</p>
+      <p className="hint">{t('brand.hqMode')}</p>
+      <p className="hint">{t('brand.limit')}</p>
       {error ? <p className="banner-bad">{error}</p> : null}
       {saved ? <p className="hint">{t('brand.saved')}</p> : null}
       <div className="fields">
@@ -86,14 +153,29 @@ export function BrandPage() {
             {orgs.map((org) => <option key={org.id} value={org.id}>{levelCode[org.level]} {org.name}</option>)}
           </select>
         </label>
-        <label>{t('brand.name')}<input value={form.brandName} onChange={(e) => setForm({ ...form, brandName: e.target.value })} /></label>
-        <label>{t('brand.logo')}<input value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} /></label>
-        <label>{t('brand.slug')}<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
-        <label>{t('brand.domain')}<input value={form.customDomain} onChange={(e) => setForm({ ...form, customDomain: e.target.value })} /></label>
-        <label>{t('brand.accent')}<input value={form.accentColor} onChange={(e) => setForm({ ...form, accentColor: e.target.value })} /></label>
+        <label>{t('brand.mode')}
+          <select value={hq ? 'custom' : form.brandMode} disabled={hq} onChange={(e) => set('brandMode', e.target.value)}>
+            <option value="follow">{t('brand.follow')}</option>
+            <option value="custom">{t('brand.custom')}</option>
+          </select>
+        </label>
+        <label>{t('brand.siteName')}<input value={form.siteName} disabled={!custom} onChange={(e) => set('siteName', e.target.value)} /></label>
+        <label>{t('brand.name')}<input value={form.brandName} disabled={!custom} onChange={(e) => set('brandName', e.target.value)} /></label>
+        <label>{t('brand.footer')}<input value={form.footerText} disabled={!custom} onChange={(e) => set('footerText', e.target.value)} /></label>
+        <label>{t('brand.accent')}<input value={form.accentColor} disabled={!custom} onChange={(e) => set('accentColor', e.target.value)} /></label>
+        <label>{t('brand.slug')}<input value={form.slug} onChange={(e) => set('slug', e.target.value)} /></label>
+        <label>{t('brand.domain')}<input value={form.customDomain} onChange={(e) => set('customDomain', e.target.value)} /></label>
       </div>
-      <p className="hint">{form.brandName || selected?.name || 'ICOCARD'}</p>
-      <img src={form.logoUrl || '/brand/icocard-logo.png'} alt={form.brandName || 'ICOCARD'} style={{ maxHeight: 48, background: form.accentColor || 'transparent' }} />
+      {fileField(t('brand.background'), 'loginBackgroundUrl', 'background')}
+      {fileField(t('brand.loginLogo'), 'loginLogoUrl', 'loginLogo')}
+      {fileField(t('brand.menuLogo'), 'logoUrl', 'logo')}
+      {fileField(t('brand.favicon'), 'faviconUrl', 'favicon')}
+      <p className="hint">{t('brand.preview')}</p>
+      <div className="brand-preview" style={{ backgroundImage: shown.loginBackgroundUrl ? `url(${assetUrl(shown.loginBackgroundUrl)})` : undefined }}>
+        <img src={assetUrl(shown.loginLogoUrl || shown.logoUrl) || '/brand/icocard-logo.png'} alt={shown.brandName || 'ICOCARD'} />
+        <strong>{shown.siteName || shown.brandName || 'ICOCARD'}</strong>
+        <span>{shown.footerText}</span>
+      </div>
       <button type="submit">{t('brand.save')}</button>
     </form>
   );

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LangMenu from './LangMenu';
+import { assetUrl, useDocumentBrand } from '../brandView';
 import { apiAuth, clearToken, type SessionAccount } from '../session';
 
 type ShellTheme = 'dark' | 'default' | 'light';
@@ -113,6 +114,7 @@ export default function AdminShell() {
   }, [navigate]);
 
   const allow = useMemo(() => (account ? new Set(allowedIds(account)) : new Set<string>()), [account]);
+  useDocumentBrand(account);
   const groups = GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => allow.has(item.id)) })).filter((group) => group.items.length);
   const flat = [{ to: '/admin/dashboard', label: 'menu.dashboard', id: 'dashboard' }, ...groups.flatMap((group) => group.items)];
 
@@ -152,7 +154,7 @@ export default function AdminShell() {
     <div className={`hq-shell${collapsed ? ' is-collapsed' : ''}${tablet ? ' is-tablet' : ''}`}>
       <aside className="hq-side">
         <Link to="/admin/dashboard" className="hq-brand">
-          <img src={account.logoUrl || (theme === 'light' ? '/brand/icocard-logo.png' : '/brand/icocard-logo-dark.png')} alt={account.brandName || 'ICOCARD'} />
+          <img src={assetUrl(account.logoUrl || account.loginLogoUrl) || (theme === 'light' ? '/brand/icocard-logo.png' : '/brand/icocard-logo-dark.png')} alt={account.brandName || 'ICOCARD'} />
         </Link>
         <div className="hq-fold-wrap">
           <button
@@ -273,6 +275,7 @@ export default function AdminShell() {
           <div className="hq-page"><Outlet /></div>
           </div>
           </div>
+          {account.footerText ? <footer className="hq-foot">{account.footerText}</footer> : null}
       </div>
     </div>
   );

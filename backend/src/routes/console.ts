@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
 import { config, wirexCorporate } from '../config.js';
+import { brandDir, brandKinds, removeBrandFile, saveBrandImage, type BrandKind } from '../brandFiles.js';
 import { generateOtpSecret, otpAuthUrl, verifyTotp } from '../lib/totp.js';
 import {
   chargeFits,
@@ -25,6 +27,7 @@ import {
   writeDb,
   MENU_IDS,
   type BizCard,
+  type BrandMode,
   type FundingMode,
   type Org,
   type OrgLevel,
@@ -36,6 +39,7 @@ import {
 } from '../orgStore.js';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const nextLevel: Partial<Record<OrgLevel, OrgLevel>> = { hq: 'large', large: 'middle', middle: 'small' };
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -114,20 +118,59 @@ function readFunding(body: unknown): { mode: FundingMode; prefundedBudget: numbe
   return { mode, prefundedBudget: money(prefundedBudget) };
 }
 
-function readBrand(db: ReturnType<typeof readDb>, selfId: string, value: unknown): { fields: Pick<Org, 'brandName' | 'logoUrl' | 'slug' | 'customDomain' | 'accentColor'>; error?: undefined } | { error: string; fields?: undefined } {
+const imageKeys = ['logoUrl', 'loginLogoUrl', 'loginBackgroundUrl', 'faviconUrl'] as const;
+const textKeys = ['brandName', 'siteName', 'footerText', 'slug', 'customDomain', 'accentColor'] as const;
+
+function imageOk(url: string) {
+  if (!url) return true;
+  if (url.startsWith('/api/brand-files/') || (url.startsWith('/') && !url.startsWith('//'))) return true;
+  return /^https?:\/\//.test(url);
+}
+
+function readBrand(db: ReturnType<typeof readDb>, selfId: string, value: unknown): { fields: Partial<Org>; error?: undefined } | { error: string; fields?: undefined } {
   const src = value && typeof value === 'object' ? value as Record<string, unknown> : {};
-  const brandName = String(src.brandName ?? '').trim().slice(0, 80);
-  const logoUrl = String(src.logoUrl ?? '').trim().slice(0, 300);
-  const slug = String(src.slug ?? '').trim().toLowerCase();
-  const customDomain = String(src.customDomain ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
-  const accentColor = String(src.accentColor ?? '').trim();
-  if (slug && !/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(slug)) return { error: 'slug_invalid' };
-  if (customDomain && (customDomain.length > 253 || !/^[a-z0-9.-]+$/.test(customDomain))) return { error: 'domain_invalid' };
-  if (logoUrl && !logoUrl.startsWith('/') && !/^https?:\/\//.test(logoUrl)) return { error: 'logo_invalid' };
-  if (accentColor && !/^#[0-9a-fA-F]{6}$/.test(accentColor)) return { error: 'accent_invalid' };
-  if (slug && db.orgs.some((org) => org.id !== selfId && (org.slug || '').toLowerCase() === slug)) return { error: 'slug_exists' };
-  if (customDomain && db.orgs.some((org) => org.id !== selfId && (org.customDomain || '').toLowerCase() === customDomain)) return { error: 'domain_exists' };
-  return { fields: { brandName, logoUrl, slug, customDomain, accentColor } };
+  const fields: Partial<Org> = {};
+  if ('brandMode' in src) fields.brandMode = src.brandMode === 'custom' ? 'custom' : 'follow';
+  if ('brandName' in src) fields.brandName = String(src.brandName ?? '').trim().slice(0, 80);
+  if ('siteName' in src) fields.siteName = String(src.siteName ?? '').trim().slice(0, 100);
+  if ('footerText' in src) fields.footerText = String(src.footerText ?? '').trim().slice(0, 300);
+  if ('accentColor' in src) {
+    const accentColor = String(src.accentColor ?? '').trim();
+    if (accentColor && !/^#[0-9a-fA-F]{6}$/.test(accentColor)) return { error: 'accent_invalid' };
+    fields.accentColor = accentColor;
+  }
+  for (const key of imageKeys) {
+    if (!(key in src)) continue;
+    const url = String(src[key] ?? '').trim().slice(0, 300);
+    if (!imageOk(url)) return { error: 'logo_invalid' };
+    fields[key] = url;
+  }
+  if ('slug' in src) {
+    const slug = String(src.slug ?? '').trim().toLowerCase();
+    if (slug && !/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(slug)) return { error: 'slug_invalid' };
+    if (slug && db.orgs.some((org) => org.id !== selfId && (org.slug || '').toLowerCase() === slug)) return { error: 'slug_exists' };
+    fields.slug = slug;
+  }
+  if ('customDomain' in src) {
+    const customDomain = String(src.customDomain ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+    if (customDomain && (customDomain.length > 253 || !/^[a-z0-9.-]+$/.test(customDomain))) return { error: 'domain_invalid' };
+    if (customDomain && db.orgs.some((org) => org.id !== selfId && (org.customDomain || '').toLowerCase() === customDomain)) return { error: 'domain_exists' };
+    fields.customDomain = customDomain;
+  }
+  return { fields };
+}
+
+function applyBrand(org: Org, fields: Partial<Org>) {
+  if (org.level === 'hq') fields.brandMode = 'custom';
+  for (const key of imageKeys) {
+    const next = fields[key];
+    const previous = String(org[key] || '');
+    if (next !== undefined && next !== previous) removeBrandFile(org.id, previous);
+  }
+  const keys = ['brandMode', ...textKeys, ...imageKeys] as const;
+  for (const key of keys) {
+    if (fields[key] !== undefined) org[key] = fields[key] as never;
+  }
 }
 
 function readProfile(value: unknown): OrgProfile {
@@ -157,30 +200,74 @@ function readProfile(value: unknown): OrgProfile {
   };
 }
 
-function shownBrand(db: ReturnType<typeof readDb>, org: Org) {
-  let brandName = '';
-  let logoUrl = '';
-  let accentColor = '';
-  for (const node of chainOf(db, org.id)) {
-    if (node.brandName) brandName = node.brandName;
-    if (node.logoUrl) logoUrl = node.logoUrl;
-    if (node.accentColor) accentColor = node.accentColor;
+function brandModeOf(org: Org): BrandMode {
+  if (org.level === 'hq') return 'custom';
+  return org.brandMode === 'custom' ? 'custom' : 'follow';
+}
+
+function brandSource(db: ReturnType<typeof readDb>, org: Org) {
+  const seen = new Set<string>();
+  let current: Org | undefined = org;
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    if (brandModeOf(current) === 'custom') return current;
+    current = current.parentId ? db.orgs.find((item) => item.id === current?.parentId) : undefined;
   }
-  return { brandName: brandName || org.name || 'ICOCARD', logoUrl, accentColor };
+  return org;
+}
+
+function shownBrand(db: ReturnType<typeof readDb>, org: Org) {
+  const source = brandSource(db, org);
+  const chain = chainOf(db, source.id);
+  const pick = (read: (node: Org) => string | undefined) => {
+    for (let index = chain.length - 1; index >= 0; index -= 1) {
+      const value = (read(chain[index]) || '').trim();
+      if (value) return value;
+    }
+    return '';
+  };
+  const brandName = pick((node) => node.brandName) || source.name || 'ICOCARD';
+  const logoUrl = pick((node) => node.logoUrl);
+  const loginLogoUrl = pick((node) => node.loginLogoUrl) || logoUrl;
+  return {
+    brandMode: brandModeOf(org),
+    brandName,
+    logoUrl,
+    loginLogoUrl,
+    loginBackgroundUrl: pick((node) => node.loginBackgroundUrl),
+    faviconUrl: pick((node) => node.faviconUrl),
+    siteName: pick((node) => node.siteName) || brandName,
+    footerText: pick((node) => node.footerText),
+    accentColor: pick((node) => node.accentColor),
+  };
+}
+
+function storedBrand(org: Org) {
+  return {
+    brandMode: brandModeOf(org),
+    brandName: org.brandName || '',
+    logoUrl: org.logoUrl || '',
+    loginLogoUrl: org.loginLogoUrl || '',
+    loginBackgroundUrl: org.loginBackgroundUrl || '',
+    faviconUrl: org.faviconUrl || '',
+    siteName: org.siteName || '',
+    footerText: org.footerText || '',
+    slug: org.slug || '',
+    customDomain: org.customDomain || '',
+    accentColor: org.accentColor || '',
+  };
 }
 
 function sessionBody(account: { id: string; role: Role; orgId: string; name: string; email: string; otpSecret?: string; spendMode?: SpendMode; staffRole?: StaffRole }, org?: Org) {
   const db = readDb();
-  const brand = org ? shownBrand(db, org) : { brandName: 'ICOCARD', logoUrl: '', accentColor: '' };
+  const brand = org ? shownBrand(db, org) : { brandMode: 'custom' as const, brandName: 'ICOCARD', logoUrl: '', loginLogoUrl: '', loginBackgroundUrl: '', faviconUrl: '', siteName: 'ICOCARD', footerText: '', accentColor: '' };
   return {
     token: sign(account),
     account: {
       ...publicAccount(account),
       orgName: org?.name ?? '',
       level: org?.level ?? 'hq',
-      brandName: brand.brandName,
-      logoUrl: brand.logoUrl,
-      accentColor: brand.accentColor,
+      ...brand,
       menus: account.role === 'hq' ? [...MENU_IDS] : roleMenus(db)[account.staffRole || 'admin'],
     },
   };
@@ -195,13 +282,45 @@ router.get('/brand', (req, res) => {
     const slug = (item.slug || '').trim().toLowerCase();
     return Boolean(slug) && (host === slug || host.startsWith(`${slug}.`));
   });
-  const brand = org ? shownBrand(db, org) : { brandName: 'ICOCARD', logoUrl: '', accentColor: '' };
+  const brand = org ? shownBrand(db, org) : { brandName: 'ICOCARD', logoUrl: '', loginLogoUrl: '', loginBackgroundUrl: '', faviconUrl: '', siteName: 'ICOCARD', footerText: '', accentColor: '', brandMode: 'custom' as const };
   res.json({
+    ...brand,
     name: brand.brandName,
-    logoUrl: brand.logoUrl,
     slug: org?.slug || '',
-    accentColor: brand.accentColor,
     matched: Boolean(org),
+  });
+});
+
+router.get('/orgs/:id/brand', (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || actor.role === 'user') return res.status(403).json({ error: 'operator_only' });
+  const orgId = String(req.params.id || '');
+  if (!canManage(actor, orgId)) return res.status(403).json({ error: 'org_forbidden' });
+  const db = readDb();
+  const org = db.orgs.find((item) => item.id === orgId);
+  if (!org) return res.status(404).json({ error: 'org_missing' });
+  res.json({ stored: storedBrand(org), shown: shownBrand(db, org) });
+});
+
+router.post('/orgs/:id/brand-file', (req, res) => {
+  upload.single('file')(req, res, (err: unknown) => {
+    if (err) return res.status(400).json({ error: 'file_size' });
+    const actor = requireActor(req, res);
+    if (!actor || !allowStaff(actor, ['hq', 'admin'])) return res.status(403).json({ error: 'staff_forbidden' });
+    const orgId = String(req.params.id || '');
+    if (!canManage(actor, orgId)) return res.status(403).json({ error: 'org_forbidden' });
+    const kind = String(req.body?.kind || '') as BrandKind;
+    if (!(kind in brandKinds)) return res.status(400).json({ error: 'file_required' });
+    const file = req.file;
+    if (!file?.buffer?.length) return res.status(400).json({ error: 'file_required' });
+    const saved = saveBrandImage(orgId, kind, file.buffer);
+    if ('error' in saved) return res.status(400).json({ error: saved.error });
+    const db = readDb();
+    const org = db.orgs.find((item) => item.id === orgId);
+    if (!org) return res.status(404).json({ error: 'org_missing' });
+    applyBrand(org, { [brandKinds[kind].field]: saved.url, brandMode: 'custom' });
+    writeDb(db);
+    res.json({ url: saved.url, stored: storedBrand(org), shown: shownBrand(db, org) });
   });
 });
 
@@ -452,6 +571,7 @@ router.post('/orgs', (req, res) => {
     fundingMode: funding.mode,
     prefundedBudget: funding.prefundedBudget,
     ...brand.fields,
+    brandMode: brand.fields.brandMode || ((brand.fields.brandName || brand.fields.logoUrl || brand.fields.loginLogoUrl || brand.fields.loginBackgroundUrl || brand.fields.faviconUrl || brand.fields.siteName || brand.fields.footerText || brand.fields.accentColor) ? 'custom' : 'follow'),
   });
   db.accounts.push({
     id: crypto.randomUUID(),
@@ -517,14 +637,10 @@ router.patch('/orgs/:id', (req, res) => {
     if (!allowStaff(actor, ['hq', 'admin'])) return res.status(403).json({ error: 'staff_forbidden' });
     const brand = readBrand(db, org.id, req.body.brand);
     if (brand.error || !brand.fields) return res.status(400).json({ error: brand.error || 'domain_invalid' });
-    org.brandName = brand.fields.brandName;
-    org.logoUrl = brand.fields.logoUrl;
-    org.slug = brand.fields.slug;
-    org.customDomain = brand.fields.customDomain;
-    org.accentColor = brand.fields.accentColor;
+    applyBrand(org, brand.fields);
   }
   writeDb(db);
-  res.json({ ok: true });
+  res.json(wantsBrand ? { ok: true, stored: storedBrand(org), shown: shownBrand(db, org) } : { ok: true });
 });
 
 router.post('/accounts', (req, res) => {
@@ -945,7 +1061,7 @@ router.get('/me', (req, res) => {
   const spends = db.spends.filter((row) => row.userId === actor.sub).slice().reverse();
   const charges = db.charges.filter((row) => row.userId === actor.sub).slice().reverse();
   res.json({
-    account: account ? { ...publicAccount(account), orgName: org?.name ?? '', level: org?.level ?? 'small' } : null,
+    account: account && org ? { ...publicAccount(account), orgName: org.name, level: org.level, ...shownBrand(db, org) } : null,
     cards,
     spends,
     charges,
