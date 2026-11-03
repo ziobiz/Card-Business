@@ -1,5 +1,11 @@
 # Card-Business — 회사 카드
 
+> **이 폴더·저장소는 Card-Business 전용입니다.**  
+> GitHub: `https://github.com/ziobiz/Card-Business.git` (`origin`만 사용)  
+> 서버: `162.35.169.201` / `business.icocard.net`  
+> 복원 시점: `2f2c3db` (수기 마감·일일 한도 계산 개발 직전)  
+> **OTLCARD**(`D:\Delopment\OTLCARD`, `162.220.11.183`, `wirex`/`me`)와 코드·키·배포·Git 원격을 섞지 마세요. 다른 프로젝트입니다.
+
 회사 지갑 하나와 직원 카드. [Wirex Corporate API](https://docs.wirexapp.com/docs/corporate-cards) 기준입니다.
 
 개인 카드(`D:\Delopment\Card-Personal`, icocard.net)와 저장소, 서버, API 키를 공유하지 않습니다.

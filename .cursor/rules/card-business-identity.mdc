@@ -1,0 +1,21 @@
+---
+description: Card-Business 저장소 정체성. OTLCARD와 절대 혼동·연동하지 않는다.
+alwaysApply: true
+---
+
+# Card-Business 전용
+
+이 워크스페이스·저장소 이름은 **Card-Business** 이다.
+
+- Git 원격은 `https://github.com/ziobiz/Card-Business.git` (`origin`) **만** 사용한다.
+- `OTLCARD`, `D:\Delopment\OTLCARD`, `162.220.11.183`, `wirex.icocard.net`, `me.icocard.net` 과 코드·키·배포·커밋·푸시를 **절대** 섞지 않는다.
+- Card-Business와 OTLCARD는 **다른 프로젝트**이다. 이름·경로·서버·원격이 비슷해 보여도 동일시하지 않는다.
+- `git push` / `gh` / 원격 추가 시 OTLCARD URL이 보이면 중단한다.
+- 개인 카드(`Card-Personal`, icocard.net)와도 공유하지 않는다.
+
+## Card-Business 기준
+
+- 로컬: `D:\Delopment\Card-Business`
+- GitHub: `ziobiz/Card-Business`
+- 서버·도메인: `162.35.169.201` / `business.icocard.net`
+- 복원 기준 커밋: `2f2c3db` (수기 마감·일일 한도 계산 개발 직전)
