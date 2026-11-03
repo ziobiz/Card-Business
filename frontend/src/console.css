@@ -59,6 +59,22 @@
 .user-tx h1 { margin: 0 0 6px; font-size: 20px; }
 .user-tx p { color: #9a9a9a; }
 .user-tx th, .user-tx td { border-bottom-color: rgba(255,255,255,.12); }
+.support-portal .support-status { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+.support-portal .support-status article { border: 1px solid #e8eaed; padding: 10px; background: #fafbfc; }
+.support-portal .support-status span { display: block; color: #667; font-size: 12px; }
+.support-portal .support-status strong { display: block; margin-top: 4px; word-break: break-all; }
+.support-portal .support-search { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin: 12px 0; }
+.support-portal .support-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.support-portal .support-tabs button { background: #eef1f4; color: #333; border: 1px solid #d5dae2; padding: 6px 10px; cursor: pointer; }
+.support-portal .support-tabs button.on { background: #6658dd; color: #fff; border-color: #6658dd; }
+.support-portal .support-block { margin-top: 14px; }
+.support-portal .support-template { white-space: pre-wrap; background: #f7f8fa; border: 1px solid #e8eaed; padding: 12px; line-height: 1.45; }
+.support-portal .support-pill { display: inline-block; padding: 2px 8px; font-size: 12px; border: 1px solid #d5dae2; background: #fff; }
+.support-portal .support-api { border-color: #86efac; background: #f0fdf4; }
+.support-portal .support-partial { border-color: #fcd34d; background: #fffbeb; }
+.support-portal .support-portal_only { border-color: #fca5a5; background: #fef2f2; }
+.support-portal .support-local { border-color: #93c5fd; background: #eff6ff; }
 @media (max-width: 900px) {
-  .hq-shell, .stat-row, .fields { grid-template-columns: 1fr; }
+  .hq-shell, .stat-row, .fields, .support-portal .support-status { grid-template-columns: 1fr; }
+  .support-portal .support-search { grid-template-columns: 1fr; }
 }

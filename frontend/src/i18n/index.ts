@@ -9,6 +9,7 @@ import thUi from './locales/ui/th.json';
 import zhUi from './locales/ui/zh.json';
 import shellPack from './shellPack';
 import menuPack from './menuPack';
+import supportPack from './supportPack';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'ko', name: '한국어' },
@@ -39,6 +40,7 @@ i18n.use(initReactI18next).init({
 for (const lang of Object.keys(shellPack) as LanguageCode[]) {
   i18n.addResourceBundle(lang, 'translation', shellPack[lang], true, true);
   i18n.addResourceBundle(lang, 'translation', menuPack[lang], true, true);
+  i18n.addResourceBundle(lang, 'translation', supportPack[lang], true, true);
 }
 
 if (typeof document !== 'undefined') document.documentElement.lang = initial;

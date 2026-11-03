@@ -3,7 +3,7 @@ const pack = {
     menu: {
       dashboard: '대시보드', company: '업체관리', orgs: '조직관리',
       service: '서비스관리', risk: '리스크관리', revenue: '수익관리', usage: '이용관리',
-      ops: '운영관리', fees: '수수료설정', orgOps: '조직운영', users: '사용자관리', activity: '기록관리',
+      ops: '운영관리', fees: '수수료설정', orgOps: '조직운영', users: '사용자관리', activity: '기록관리', support: 'Support Portal',
       settings: '환경설정', brand: '브랜드관리', access: '접근권한', platform: '플랫폼 도메인 SSL', manual: '이용매뉴얼', link: 'API연동',
     },
     reg: {
@@ -39,7 +39,7 @@ const pack = {
     menu: {
       dashboard: 'Dashboard', company: 'Companies', orgs: 'Organizations',
       service: 'Services', risk: 'Risk', revenue: 'Revenue', usage: 'Usage',
-      ops: 'Operations', fees: 'Fees', orgOps: 'Org operations', users: 'Users', activity: 'Records',
+      ops: 'Operations', fees: 'Fees', orgOps: 'Org operations', users: 'Users', activity: 'Records', support: 'Support Portal',
       settings: 'Settings', brand: 'Brand', access: 'Access', platform: 'Domain and SSL', manual: 'Manual', link: 'API link',
     },
     reg: {
@@ -75,7 +75,7 @@ const pack = {
     menu: {
       dashboard: 'ダッシュボード', company: '企業管理', orgs: '組織管理',
       service: 'サービス', risk: 'リスク', revenue: '収益', usage: '利用',
-      ops: '運営', fees: '手数料', orgOps: '組織運営', users: 'ユーザー', activity: '記録',
+      ops: '運営', fees: '手数料', orgOps: '組織運営', users: 'ユーザー', activity: '記録', support: 'Support Portal',
       settings: '設定', brand: 'ブランド', access: 'アクセス権', platform: 'ドメイン SSL', manual: 'マニュアル', link: 'API連携',
     },
     reg: {
@@ -111,7 +111,7 @@ const pack = {
     menu: {
       dashboard: 'แดชบอร์ด', company: 'บริษัท', orgs: 'องค์กร',
       service: 'บริการ', risk: 'ความเสี่ยง', revenue: 'รายได้', usage: 'การใช้งาน',
-      ops: 'ปฏิบัติการ', fees: 'ค่าธรรมเนียม', orgOps: 'ดำเนินงานองค์กร', users: 'ผู้ใช้', activity: 'บันทึก',
+      ops: 'ปฏิบัติการ', fees: 'ค่าธรรมเนียม', orgOps: 'ดำเนินงานองค์กร', users: 'ผู้ใช้', activity: 'บันทึก', support: 'Support Portal',
       settings: 'ตั้งค่า', brand: 'แบรนด์', access: 'สิทธิ์', platform: 'โดเมน SSL', manual: 'คู่มือ', link: 'เชื่อม API',
     },
     reg: {
@@ -147,7 +147,7 @@ const pack = {
     menu: {
       dashboard: '仪表盘', company: '企业管理', orgs: '组织管理',
       service: '服务管理', risk: '风险管理', revenue: '收益管理', usage: '使用管理',
-      ops: '运营管理', fees: '手续费设置', orgOps: '组织运营', users: '用户管理', activity: '记录管理',
+      ops: '运营管理', fees: '手续费设置', orgOps: '组织运营', users: '用户管理', activity: '记录管理', support: 'Support Portal',
       settings: '环境设置', brand: '品牌管理', access: '访问权限', platform: '平台域名 SSL', manual: '使用手册', link: 'API 连接',
     },
     reg: {

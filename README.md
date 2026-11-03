@@ -17,6 +17,14 @@
 
 키를 넣기 전에는 설정 API 연결은 성공하고, 파트너 토큰은 실패하는 것이 정상입니다.
 
+## Support Portal
+
+Wirex Partner Support Portal 가이드(`docs/support-portal-guide.pdf`)를 기준으로  
+관리 화면 **운영관리 → Support Portal** (`/admin/support`) 에 Verification / Cards / Statements 를 두었습니다.
+
+- Corporate API로 가능한 일(명세서·카드 관리·KYB 상태)과 Portal 전용(차지백·오프보드·주소지 대리 업로드)을 표로 구분합니다.
+- User ID 검색은 우선 로컬 조직 데이터를 조회합니다. 법인 토큰이 생기면 Wirex 실호출을 이어서 붙입니다.
+
 ## 실행 방법
 
 **백엔드와 프론트엔드를 둘 다 실행해야 합니다.**

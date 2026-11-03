@@ -4,6 +4,7 @@ import { config, wirexCorporate } from './config.js';
 import { brandDir } from './brandFiles.js';
 import { fetchCorporateConfig, fetchPartnerToken } from './clients/corporateClient.js';
 import consoleRouter from './routes/console.js';
+import supportRouter from './routes/support.js';
 
 const app = express();
 app.use(cors({ origin: true }));
@@ -21,6 +22,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api', consoleRouter);
+app.use('/api/support', supportRouter);
 app.use('/api/brand-files', express.static(brandDir, { index: false, dotfiles: 'deny' }));
 
 app.get('/api/corporate/status', async (_req, res) => {
