@@ -3,7 +3,9 @@ import cors from 'cors';
 import { config, wirexCorporate } from './config.js';
 import { brandDir } from './brandFiles.js';
 import { fetchCorporateConfig, fetchPartnerToken } from './clients/corporateClient.js';
+import { publicCorp } from './corpStore.js';
 import consoleRouter from './routes/console.js';
+import corporateRouter from './routes/corporate.js';
 import supportRouter from './routes/support.js';
 import webhookRouter from './routes/webhooks.js';
 
@@ -12,6 +14,7 @@ app.use(cors({ origin: true }));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
+  const corp = publicCorp();
   res.json({
     ok: true,
     product: 'card-business',
@@ -19,10 +22,12 @@ app.get('/health', (_req, res) => {
     chainId: wirexCorporate.chainId,
     credentialsSet: Boolean(wirexCorporate.clientId && wirexCorporate.clientSecret),
     partnerIdSet: Boolean(wirexCorporate.partnerId),
+    corporationTokenReady: corp.corporationTokenReady,
   });
 });
 
 app.use('/api', consoleRouter);
+app.use('/api/corporate', corporateRouter);
 app.use('/api/support', supportRouter);
 app.use('/api/v2/webhooks', webhookRouter);
 app.use('/api/brand-files', express.static(brandDir, { index: false, dotfiles: 'deny' }));
@@ -57,6 +62,10 @@ app.get('/api/corporate/status', async (_req, res) => {
   const token = await fetchPartnerToken();
   out.tokenOk = token.ok;
   if (!token.ok) out.tokenError = token.error;
+  const corp = publicCorp();
+  out.corporationTokenReady = corp.corporationTokenReady;
+  out.corporationAddress = corp.corporationAddress || null;
+  out.registeredAt = corp.registeredAt;
   res.json(out);
 });
 

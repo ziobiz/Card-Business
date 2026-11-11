@@ -59,12 +59,16 @@ export async function apiAuth<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(init?.headers ?? {}) },
   });
-  const data = (await res.json().catch(() => ({}))) as { error?: string };
+  const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
   if (res.status === 401) {
     clearToken();
     throw new ApiError(apiMessage(data.error, res.status), res.status);
   }
-  if (!res.ok) throw new ApiError(apiMessage(data.error, res.status), res.status);
+  if (!res.ok) {
+    const code = data.error;
+    const mapped = code && i18n.exists(`api.${code}`) ? i18n.t(`api.${code}`) : '';
+    throw new ApiError(mapped || data.message || apiMessage(code, res.status), res.status);
+  }
   return data as T;
 }
 

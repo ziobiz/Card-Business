@@ -48,15 +48,14 @@ type Lookup = {
 
 type Tab = 'verification' | 'cards' | 'statements';
 
-const statusLabel: Record<Cap['status'], string> = {
-  api: 'Corporate API',
-  partial: '부분 가능',
-  portal_only: 'Portal 전용',
-  local: '로컬 지원',
-};
-
 export default function SupportPortalPage() {
   const { t, i18n } = useTranslation();
+  const statusLabel: Record<Cap['status'], string> = {
+    api: t('support.statusApi'),
+    partial: t('support.statusPartial'),
+    portal_only: t('support.statusPortal'),
+    local: t('support.statusLocal'),
+  };
   const [tab, setTab] = useState<Tab>('verification');
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [wirex, setWirex] = useState<WirexStatus | null>(null);
@@ -125,136 +124,150 @@ export default function SupportPortalPage() {
   return (
     <section className="panel support-portal">
       <h2>{t('support.title')}</h2>
-      <p className="hint">{t('support.lead')}</p>
-      {error ? <p className="banner-bad">{error}</p> : null}
+      <div className="support-body">
+        <p className="support-lead">{t('support.lead')}</p>
+        {error ? <p className="banner-bad">{error}</p> : null}
 
-      <div className="support-status">
-        <article>
-          <span>{t('support.api')}</span>
-          <strong>{wirex?.apiBase || '—'}</strong>
-        </article>
-        <article>
-          <span>{t('support.chain')}</span>
-          <strong>{wirex?.chainName || wirex?.chainId || '—'}</strong>
-        </article>
-        <article>
-          <span>{t('support.keys')}</span>
-          <strong>{wirex?.credentialsSet ? t('support.yes') : t('support.no')}</strong>
-        </article>
-        <article>
-          <span>{t('support.token')}</span>
-          <strong>{wirex?.tokenOk ? t('support.ok') : t('support.fail')}</strong>
-        </article>
-      </div>
-      {wirex?.tokenError || wirex?.note ? <p className="hint">{wirex.tokenError || wirex.note}</p> : null}
-      {wirex?.corporationTokenHint ? <p className="hint">{wirex.corporationTokenHint}</p> : null}
-
-      <form className="support-search" onSubmit={runLookup}>
-        <label>
-          {t('support.userId')}
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('support.userIdPh')} required />
-        </label>
-        <button type="submit">{t('support.show')}</button>
-      </form>
-      {lookup ? <p className="hint">{lookup.hint}</p> : null}
-
-      <div className="support-tabs">
-        {([
-          ['verification', t('support.tabVerif')],
-          ['cards', t('support.tabCards')],
-          ['statements', t('support.tabStmt')],
-        ] as const).map(([id, label]) => (
-          <button key={id} type="button" className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'verification' ? (
-        <div className="support-block">
-          <h3>{t('support.template')}</h3>
-          <pre className="support-template">{template ? `${template.title}\n\n${template.body}` : ''}</pre>
-          <button type="button" onClick={() => void copyTemplate()}>{copied ? t('support.copied') : t('support.copy')}</button>
-          <h3>{t('support.escalation')}</h3>
-          <ul>{(catalog?.escalation || []).map((line) => <li key={line}>{line}</li>)}</ul>
+        <div className="support-status">
+          <article>
+            <span>{t('support.api')}</span>
+            <strong>{wirex?.apiBase || '—'}</strong>
+          </article>
+          <article>
+            <span>{t('support.chain')}</span>
+            <strong>{wirex?.chainName || wirex?.chainId || '—'}</strong>
+          </article>
+          <article>
+            <span>{t('support.keys')}</span>
+            <strong>{wirex?.credentialsSet ? t('support.yes') : t('support.no')}</strong>
+          </article>
+          <article>
+            <span>{t('support.token')}</span>
+            <strong>{wirex?.tokenOk ? t('support.ok') : t('support.fail')}</strong>
+          </article>
         </div>
-      ) : null}
+        {wirex?.tokenError || wirex?.note ? <p className="support-note">{wirex.tokenError || wirex.note}</p> : null}
+        {wirex?.corporationTokenHint ? <p className="support-note">{wirex.corporationTokenHint}</p> : null}
 
-      {tab === 'cards' ? (
-        <div className="support-block">
-          <h3>{t('support.localUsers')}</h3>
-          {lookup?.users?.length ? (
-            <table>
-              <thead>
-                <tr><th>ID</th><th>{t('support.name')}</th><th>Email</th><th>{t('support.org')}</th><th>{t('support.status')}</th></tr>
-              </thead>
-              <tbody>
-                {lookup.users.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.orgName}</td>
-                    <td>{user.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : <p className="hint">{t('support.emptyUsers')}</p>}
-          <h3>{t('support.localCards')}</h3>
-          {lookup?.cards?.length ? (
-            <table>
-              <thead>
-                <tr><th>ID</th><th>{t('support.name')}</th><th>{t('support.format')}</th><th>{t('support.status')}</th><th>{t('support.limit')}</th><th>{t('support.holder')}</th></tr>
-              </thead>
-              <tbody>
-                {lookup.cards.map((card) => (
-                  <tr key={card.id}>
-                    <td>{card.id}</td>
-                    <td>{card.name}</td>
-                    <td>{card.format}</td>
-                    <td>{card.status}</td>
-                    <td>{card.cardLimit ?? '∞'}</td>
-                    <td>{card.userName || card.userEmail}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : <p className="hint">{t('support.emptyCards')}</p>}
-          <p className="hint">{t('support.chargebackHint')}</p>
-        </div>
-      ) : null}
-
-      {tab === 'statements' ? (
-        <div className="support-block">
-          <form className="fields" onSubmit={previewStatement}>
-            <label>{t('support.periodStart')}<input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} required /></label>
-            <label>{t('support.periodEnd')}<input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} required /></label>
-            <label>{t('support.chain')}<input value={String(wirex?.chainId ?? '')} readOnly /></label>
-            <button type="submit">{t('support.apply')}</button>
+        <div className="support-search-box">
+          <h3>{t('support.searchTitle')}</h3>
+          <p className="support-note">{t('support.searchHelp')}</p>
+          <form className="support-search" onSubmit={runLookup}>
+            <label>
+              {t('support.userId')}
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('support.userIdPh')} required />
+            </label>
+            <button type="submit">{t('support.show')}</button>
           </form>
-          {stmtMsg ? <p className="hint">{stmtMsg}</p> : null}
-          <p className="hint">{t('support.stmtHint')}</p>
+          {lookup ? <p className="support-note">{lookup.hint}</p> : null}
         </div>
-      ) : null}
 
-      <div className="support-block">
-        <h3>{t('support.matrix')}</h3>
-        <p className="hint">{catalog?.note}</p>
-        <table>
-          <thead>
-            <tr><th>{t('support.portalFeature')}</th><th>{t('support.canDo')}</th><th>{t('support.note')}</th></tr>
-          </thead>
-          <tbody>
-            {sectionCaps.map((row) => (
-              <tr key={row.id}>
-                <td>{row.portal}</td>
-                <td><span className={`support-pill support-${row.status}`}>{statusLabel[row.status]}</span></td>
-                <td>{row.note}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="support-tabs">
+          {([
+            ['verification', t('support.tabVerif')],
+            ['cards', t('support.tabCards')],
+            ['statements', t('support.tabStmt')],
+          ] as const).map(([id, label]) => (
+            <button key={id} type="button" className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'verification' ? (
+          <div className="support-block">
+            <h3>{t('support.template')}</h3>
+            <pre className="support-template">{template ? `${template.title}\n\n${template.body}` : ''}</pre>
+            <div className="support-template-actions">
+              <button type="button" onClick={() => void copyTemplate()}>{copied ? t('support.copied') : t('support.copy')}</button>
+            </div>
+            <h3>{t('support.escalation')}</h3>
+            <ul className="support-list">{(catalog?.escalation || []).map((line) => <li key={line}>{line}</li>)}</ul>
+          </div>
+        ) : null}
+
+        {tab === 'cards' ? (
+          <div className="support-block">
+            <h3>{t('support.localUsers')}</h3>
+            {lookup?.users?.length ? (
+              <div className="support-table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>ID</th><th>{t('support.name')}</th><th>{t('support.email')}</th><th>{t('support.org')}</th><th>{t('support.status')}</th></tr>
+                  </thead>
+                  <tbody>
+                    {lookup.users.map((user) => (
+                      <tr key={user.id}>
+                        <td>{user.id}</td>
+                        <td>{user.name}</td>
+                        <td>{user.email}</td>
+                        <td>{user.orgName}</td>
+                        <td>{user.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="support-note">{t('support.emptyUsers')}</p>}
+            <h3>{t('support.localCards')}</h3>
+            {lookup?.cards?.length ? (
+              <div className="support-table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>ID</th><th>{t('support.name')}</th><th>{t('support.format')}</th><th>{t('support.status')}</th><th>{t('support.limit')}</th><th>{t('support.holder')}</th></tr>
+                  </thead>
+                  <tbody>
+                    {lookup.cards.map((card) => (
+                      <tr key={card.id}>
+                        <td>{card.id}</td>
+                        <td>{card.name}</td>
+                        <td>{card.format}</td>
+                        <td>{card.status}</td>
+                        <td>{card.cardLimit ?? '∞'}</td>
+                        <td>{card.userName || card.userEmail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="support-note">{t('support.emptyCards')}</p>}
+            <p className="support-note">{t('support.chargebackHint')}</p>
+          </div>
+        ) : null}
+
+        {tab === 'statements' ? (
+          <div className="support-block">
+            <form className="support-fields" onSubmit={previewStatement}>
+              <label>{t('support.periodStart')}<input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} required /></label>
+              <label>{t('support.periodEnd')}<input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} required /></label>
+              <label>{t('support.chain')}<input value={String(wirex?.chainId ?? '')} readOnly /></label>
+              <button type="submit">{t('support.apply')}</button>
+            </form>
+            {stmtMsg ? <p className="support-note">{stmtMsg}</p> : null}
+            <p className="support-note">{t('support.stmtHint')}</p>
+          </div>
+        ) : null}
+
+        <div className="support-block">
+          <h3>{t('support.matrix')}</h3>
+          <p className="support-note">{catalog?.note}</p>
+          <div className="support-table-wrap">
+            <table className="support-matrix">
+              <thead>
+                <tr><th>{t('support.portalFeature')}</th><th>{t('support.canDo')}</th><th>{t('support.note')}</th></tr>
+              </thead>
+              <tbody>
+                {sectionCaps.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.portal}</td>
+                    <td className="support-matrix-status"><span className={`support-pill support-${row.status}`}>{statusLabel[row.status]}</span></td>
+                    <td>{row.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -207,10 +207,10 @@ function normalize(data: Db): Db {
   return data;
 }
 
-export const MENU_IDS = ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'support', 'brand', 'access', 'platform', 'manual', 'link'] as const;
+export const MENU_IDS = ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'brand', 'access', 'platform', 'manual', 'link'] as const;
 
 export const DEFAULT_ROLE_MENUS: Record<StaffRole, string[]> = {
-  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'support', 'access', 'manual'],
+  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'access', 'manual'],
   accountant: ['dashboard', 'revenue', 'fees', 'activity', 'support', 'manual'],
   general: ['dashboard', 'orgs', 'users', 'usage', 'activity', 'support', 'manual'],
   operator: ['dashboard', 'usage', 'activity', 'support', 'manual'],

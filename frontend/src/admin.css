@@ -423,7 +423,12 @@ body:has(.ac-chrome) {
 }
 .hq-crumbbar h1 { margin: 0; font-size: 13px; font-weight: 700; color: var(--shell-content-text); }
 .hq-crumb { font-size: 13px; font-weight: 700; color: var(--shell-content-text); }
-.hq-page { padding: 16px; }
+.hq-page {
+  padding: 20px 24px 28px;
+  display: grid;
+  gap: 14px;
+  box-sizing: border-box;
+}
 
 .lang-menu { position: relative; }
 .lang-trigger {
@@ -477,14 +482,14 @@ body:has(.ac-chrome) {
 }
 .reg-card h2, .panel h2 {
   margin: 0;
-  padding: 8px 10px;
+  padding: 10px 18px;
   font-size: 13px;
   font-weight: 700;
   background: #f8f9fa;
   border-bottom: 1px solid #e5e7eb;
 }
-.reg-card .hint, .hint { margin: 0; padding: 8px 10px 0; color: #6b7280; font-size: 12px; }
-.reg-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; padding: 10px; }
+.reg-card .hint, .hint { margin: 0; padding: 10px 18px 0; color: #6b7280; font-size: 12px; line-height: 1.5; }
+.reg-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; padding: 12px 18px; }
 .reg-grid label, .fields label { font-size: 12px; color: #374151; }
 .reg-grid input, .reg-grid select, .cb-work input, .cb-work select, .panel input, .panel select {
   display: block;
@@ -498,15 +503,54 @@ body:has(.ac-chrome) {
   padding: 0 8px;
   box-sizing: border-box;
 }
-.reg-actions { padding: 0 10px 10px; }
+.reg-actions { padding: 0 18px 16px; }
 .reg-actions button, .panel button, .cb-work button[type="submit"] {
   height: 28px;
+  width: auto;
   border: 0;
   border-radius: 4px;
   background: #2563eb;
   color: #fff;
   padding: 0 12px;
   cursor: pointer;
+}
+.panel > form,
+.panel > .fields,
+.panel > .fee-forms,
+.panel > .fee-wrap,
+.panel > .event-list,
+.panel > .card-actions,
+.panel > .tree,
+.panel > .stat-row,
+.panel > ul,
+.panel > pre {
+  margin: 0;
+  padding: 12px 18px 16px;
+  box-sizing: border-box;
+}
+.panel > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 18px 16px;
+}
+.panel > table:not(.desk-table) {
+  width: calc(100% - 36px);
+  margin: 12px 18px 8px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+.panel > table:not(.desk-table) th,
+.panel > table:not(.desk-table) td {
+  border: 1px solid #d1d5db;
+  padding: 8px 10px;
+  vertical-align: middle;
+  text-align: left;
+}
+.panel > table:not(.desk-table) th {
+  background: #f8f9fa;
+  font-weight: 700;
+  text-align: center;
 }
 .stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; }
 .panel .stat-row { padding: 16px; }
@@ -527,21 +571,31 @@ body:has(.ac-chrome) {
 .desk-bar.warn i { background: #d97706; }
 .desk-bar.bad i { background: #dc2626; }
 .panel { padding: 0; overflow: hidden; }
-.panel h2 { margin: 0; }
 .cb-work .org-picks { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .cb-work .org-picks button { height: 26px; border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 4px; padding: 0 8px; cursor: pointer; }
 .cb-work .org-picks button.on { border-color: #2563eb; color: #2563eb; }
-.banner-bad { background: #fef2f2; color: #b91c1c; padding: 6px 8px; border-radius: 4px; }
+.banner-bad { background: #fef2f2; color: #b91c1c; padding: 8px 12px; border-radius: 4px; margin: 0 18px; }
 .panel table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.panel th, .panel td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: 5px 4px; }
-.panel .desk-table { width: calc(100% - 24px); margin: 16px 12px 16px; }
+.panel th, .panel td { text-align: left; padding: 8px 10px; border-bottom: 0; }
+.panel .desk-table,
+.panel > table.fee-grid {
+  width: calc(100% - 36px);
+  margin: 16px 18px;
+}
 .panel .desk-table th,
-.panel .desk-table td {
-  border: 1px solid #e5e7eb;
+.panel .desk-table td,
+.panel > table.fee-grid th,
+.panel > table.fee-grid td {
+  border: 1px solid #d1d5db;
   text-align: center;
-  padding: 6px 8px;
+  padding: 8px 10px;
   vertical-align: middle;
   line-height: 1.4;
+}
+.panel .desk-table th,
+.panel > table.fee-grid th {
+  background: #f8f9fa;
+  font-weight: 700;
   white-space: nowrap;
 }
 

@@ -3,7 +3,7 @@ const pack = {
     menu: {
       dashboard: '대시보드', company: '업체관리', orgs: '조직관리',
       service: '서비스관리', risk: '리스크관리', revenue: '수익관리', usage: '이용관리',
-      ops: '운영관리', fees: '수수료설정', orgOps: '조직운영', users: '사용자관리', activity: '기록관리', support: 'Support Portal',
+      ops: '운영관리', fees: '수수료설정', orgOps: '조직운영', users: '사용자관리', activity: '기록관리', corp: '법인관리', support: '지원관리',
       settings: '환경설정', brand: '브랜드관리', access: '접근권한', platform: '플랫폼 도메인 SSL', manual: '이용매뉴얼', link: 'API연동',
     },
     reg: {
@@ -33,13 +33,23 @@ const pack = {
       manualLead: '조직 등록, 운영자 추가, 카드 발급, 수수료 설정 순서입니다.',
       accessLead: '조직 운영자 네 유형이 볼 수 있는 메뉴입니다. 본사는 모든 메뉴를 봅니다.',
     },
-    api: { staff_forbidden: '이 권한으로는 변경할 수 없습니다.' },
+    api: {
+      staff_forbidden: '이 권한으로는 변경할 수 없습니다.',
+      corporation_profile_incomplete: '소유자 지갑·이메일·법인 지갑 주소를 먼저 저장하세요.',
+      corporation_legal_required: '법인 명칭·등록번호·등록 국가를 모두 입력하세요.',
+      wirex_error: 'Wirex API 오류가 발생했습니다.',
+      onchain_corporation_missing: '온체인에 법인이 없습니다. 온체인 생성 후 다시 시도하세요.',
+      corporation_address_required: '법인 지갑 주소가 필요합니다.',
+      private_key_required: '개인키를 입력하세요.',
+      owner_email_required: '소유자 이메일이 필요합니다.',
+      owner_key_required: '소유자 개인키가 필요합니다. 먼저 생성하거나 가져오세요.',
+    },
   },
   en: {
     menu: {
       dashboard: 'Dashboard', company: 'Companies', orgs: 'Organizations',
       service: 'Services', risk: 'Risk', revenue: 'Revenue', usage: 'Usage',
-      ops: 'Operations', fees: 'Fees', orgOps: 'Org operations', users: 'Users', activity: 'Records', support: 'Support Portal',
+      ops: 'Operations', fees: 'Fees', orgOps: 'Org operations', users: 'Users', activity: 'Records', corp: 'Corporation', support: 'Support management',
       settings: 'Settings', brand: 'Brand', access: 'Access', platform: 'Domain and SSL', manual: 'Manual', link: 'API link',
     },
     reg: {
@@ -69,13 +79,23 @@ const pack = {
       manualLead: 'Register an organization, add operators, issue cards, then set fees.',
       accessLead: 'Menus each operator type can open. HQ sees every menu.',
     },
-    api: { staff_forbidden: 'This role cannot change that.' },
+    api: {
+      staff_forbidden: 'This role cannot change that.',
+      corporation_profile_incomplete: 'Save owner wallet, email, and corporation address first.',
+      corporation_legal_required: 'Enter legal name, registration number, and country.',
+      wirex_error: 'Wirex API error.',
+      onchain_corporation_missing: 'Corporation is not on-chain yet. Create it first.',
+      corporation_address_required: 'Corporation wallet address is required.',
+      private_key_required: 'Private key is required.',
+      owner_email_required: 'Owner email is required.',
+      owner_key_required: 'Owner private key is required. Generate or import it first.',
+    },
   },
   ja: {
     menu: {
       dashboard: 'ダッシュボード', company: '企業管理', orgs: '組織管理',
       service: 'サービス', risk: 'リスク', revenue: '収益', usage: '利用',
-      ops: '運営', fees: '手数料', orgOps: '組織運営', users: 'ユーザー', activity: '記録', support: 'Support Portal',
+      ops: '運営', fees: '手数料', orgOps: '組織運営', users: 'ユーザー', activity: '記録', corp: '法人管理', support: 'サポート管理',
       settings: '設定', brand: 'ブランド', access: 'アクセス権', platform: 'ドメイン SSL', manual: 'マニュアル', link: 'API連携',
     },
     reg: {
@@ -105,13 +125,18 @@ const pack = {
       manualLead: '組織登録、運営者追加、カード発行、手数料設定の順です。',
       accessLead: '運営者4類型が見られるメニューです。本社はすべて見られます。',
     },
-    api: { staff_forbidden: 'この権限では変更できません。' },
+    api: {
+      staff_forbidden: 'この権限では変更できません。',
+      corporation_profile_incomplete: '所有者ウォレット・メール・法人ウォレットを先に保存してください。',
+      corporation_legal_required: '正式名称・登録番号・登録国を入力してください。',
+      wirex_error: 'Wirex API エラーです。',
+    },
   },
   th: {
     menu: {
       dashboard: 'แดชบอร์ด', company: 'บริษัท', orgs: 'องค์กร',
       service: 'บริการ', risk: 'ความเสี่ยง', revenue: 'รายได้', usage: 'การใช้งาน',
-      ops: 'ปฏิบัติการ', fees: 'ค่าธรรมเนียม', orgOps: 'ดำเนินงานองค์กร', users: 'ผู้ใช้', activity: 'บันทึก', support: 'Support Portal',
+      ops: 'ปฏิบัติการ', fees: 'ค่าธรรมเนียม', orgOps: 'ดำเนินงานองค์กร', users: 'ผู้ใช้', activity: 'บันทึก', corp: 'จัดการนิติบุคคล', support: 'การจัดการสนับสนุน',
       settings: 'ตั้งค่า', brand: 'แบรนด์', access: 'สิทธิ์', platform: 'โดเมน SSL', manual: 'คู่มือ', link: 'เชื่อม API',
     },
     reg: {
@@ -141,13 +166,18 @@ const pack = {
       manualLead: 'ลงทะเบียนองค์กร เพิ่มผู้ดูแล ออกบัตร แล้วตั้งค่าธรรมเนียม',
       accessLead: 'เมนูที่ผู้ดูแลแต่ละประเภทเปิดได้ สำนักงานใหญ่เห็นทุกเมนู',
     },
-    api: { staff_forbidden: 'สิทธิ์นี้เปลี่ยนแปลงไม่ได้' },
+    api: {
+      staff_forbidden: 'สิทธิ์นี้เปลี่ยนแปลงไม่ได้',
+      corporation_profile_incomplete: 'บันทึกกระเป๋าเจ้าของ อีเมล และที่อยู่นิติบุคคลก่อน',
+      corporation_legal_required: 'กรอกชื่อทางกฎหมาย เลขทะเบียน และประเทศ',
+      wirex_error: 'เกิดข้อผิดพลาด Wirex API',
+    },
   },
   zh: {
     menu: {
       dashboard: '仪表盘', company: '企业管理', orgs: '组织管理',
       service: '服务管理', risk: '风险管理', revenue: '收益管理', usage: '使用管理',
-      ops: '运营管理', fees: '手续费设置', orgOps: '组织运营', users: '用户管理', activity: '记录管理', support: 'Support Portal',
+      ops: '运营管理', fees: '手续费设置', orgOps: '组织运营', users: '用户管理', activity: '记录管理', corp: '法人管理', support: '支持管理',
       settings: '环境设置', brand: '品牌管理', access: '访问权限', platform: '平台域名 SSL', manual: '使用手册', link: 'API 连接',
     },
     reg: {
@@ -177,7 +207,12 @@ const pack = {
       manualLead: '先注册组织，再添加运营者、发卡、设置手续费。',
       accessLead: '四类运营者可见的菜单。总部可见全部。',
     },
-    api: { staff_forbidden: '此权限不能修改。' },
+    api: {
+      staff_forbidden: '此权限不能修改。',
+      corporation_profile_incomplete: '请先保存所有者钱包、邮箱和法人钱包地址。',
+      corporation_legal_required: '请填写法定名称、注册号和注册国家。',
+      wirex_error: 'Wirex API 错误。',
+    },
   },
 } as const;
 

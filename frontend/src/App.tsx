@@ -8,6 +8,7 @@ import { DashboardPage, ManualPage, RevenuePage, RiskPage } from './pages/DeskPa
 import { AccessPage, BrandPage, PlatformPage } from './pages/SettingsPages';
 import LinkPage from './pages/LinkPage';
 import OrgRegisterPage from './pages/OrgRegisterPage';
+import CorporatePage from './pages/CorporatePage';
 import SupportPortalPage from './pages/SupportPortalPage';
 import UserPage from './pages/UserPage';
 
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="org-ops" element={<ConsolePage />} />
           <Route path="users" element={<ConsolePage />} />
           <Route path="activity" element={<ConsolePage />} />
+          <Route path="corp" element={<CorporatePage />} />
           <Route path="support" element={<SupportPortalPage />} />
           <Route path="brand" element={<BrandPage />} />
           <Route path="access" element={<AccessPage />} />

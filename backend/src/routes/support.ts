@@ -2,6 +2,7 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { config, wirexCorporate } from '../config.js';
 import { fetchCorporateConfig, fetchPartnerToken } from '../clients/corporateClient.js';
+import { publicCorp } from '../corpStore.js';
 import {
   ESCALATION_CHECKLIST,
   SUPPORT_CAPABILITIES,
@@ -57,8 +58,10 @@ router.get('/wirex-status', async (req, res) => {
     credentialsSet: Boolean(wirexCorporate.clientId && wirexCorporate.clientSecret),
     partnerIdSet: Boolean(wirexCorporate.partnerId),
     mock: config.useMockWirex,
-    corporationTokenReady: false,
-    corporationTokenHint: '법인 토큰(corporations/login)이 있어야 카드·명세서를 실호출합니다. 지금은 파트너 키·설정 확인까지입니다.',
+    corporationTokenReady: publicCorp().corporationTokenReady,
+    corporationTokenHint: publicCorp().corporationTokenReady
+      ? '법인 토큰이 있습니다. 카드·직원 API를 법인관리에서 호출할 수 있습니다.'
+      : '법인 토큰(corporations/login)이 있어야 카드·명세서를 실호출합니다. 법인관리에서 온보딩을 진행하세요.',
   };
   try {
     const summary = await fetchCorporateConfig();

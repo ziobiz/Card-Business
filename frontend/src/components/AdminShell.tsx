@@ -44,6 +44,7 @@ const GROUPS: Group[] = [
       { to: '/admin/org-ops', label: 'menu.orgOps', id: 'orgOps' },
       { to: '/admin/users', label: 'menu.users', id: 'users' },
       { to: '/admin/activity', label: 'menu.activity', id: 'activity' },
+      { to: '/admin/corp', label: 'menu.corp', id: 'corp' },
       { to: '/admin/support', label: 'menu.support', id: 'support' },
     ],
   },
@@ -61,8 +62,8 @@ const GROUPS: Group[] = [
 ];
 
 const ROLE_MENUS: Record<string, string[]> = {
-  hq: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'support', 'brand', 'access', 'platform', 'manual', 'link'],
-  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'support', 'access', 'manual'],
+  hq: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'brand', 'access', 'platform', 'manual', 'link'],
+  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'access', 'manual'],
   accountant: ['dashboard', 'revenue', 'fees', 'activity', 'support', 'manual'],
   general: ['dashboard', 'orgs', 'users', 'usage', 'activity', 'support', 'manual'],
   operator: ['dashboard', 'usage', 'activity', 'support', 'manual'],

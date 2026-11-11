@@ -2,6 +2,7 @@ import { Router } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { patchCorp } from '../corpStore.js';
 
 const router = Router();
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -51,6 +52,16 @@ for (const topic of TOPICS) {
         headers: req.headers as Record<string, unknown>,
         body: req.body,
       });
+      if (topic === 'corporations' && req.body && typeof req.body === 'object') {
+        const body = req.body as { verification_status?: string; corporation_address?: string };
+        patchCorp({
+          lastWebhookAt: new Date().toISOString(),
+          ...(body.verification_status ? { verificationStatus: body.verification_status } : {}),
+          ...(body.corporation_address ? { corporationAddress: body.corporation_address } : {}),
+        });
+      } else if (topic === 'cards' || topic === 'card-limits' || topic === 'activities') {
+        patchCorp({ lastWebhookAt: new Date().toISOString() });
+      }
       console.log(`[webhook] ${topic}`, typeof req.body === 'object' ? JSON.stringify(req.body).slice(0, 300) : req.body);
       res.status(200).json({ ok: true, topic });
     } catch (e) {

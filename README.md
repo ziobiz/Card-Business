@@ -72,4 +72,6 @@ Card-Business/
 └── frontend/    # React + Vite. 관리 화면
 ```
 
-카드 발급은 회사 토큰이 생긴 뒤에 붙입니다. Wirex lifetime 한도는 API로 설정할 수 없고, 평생 한도는 남은 금액으로 `daily_limit` 를 갱신합니다.
+운영관리 → **법인관리** (`/admin/corp`) 에서 Wirex Corporate 온보딩·직원·카드를 진행합니다.  
+온체인 지갑 배포는 Wirex 문서 순서대로 외부에서 끝낸 뒤, 이 화면에서 API 등록·로그인·KYB·발급을 합니다.  
+Wirex lifetime 한도는 API로 설정할 수 없고, 평생 한도는 남은 금액으로 `daily_limit` 를 갱신합니다.
