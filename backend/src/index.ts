@@ -5,10 +5,11 @@ import { brandDir } from './brandFiles.js';
 import { fetchCorporateConfig, fetchPartnerToken } from './clients/corporateClient.js';
 import consoleRouter from './routes/console.js';
 import supportRouter from './routes/support.js';
+import webhookRouter from './routes/webhooks.js';
 
 const app = express();
 app.use(cors({ origin: true }));
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
   res.json({
@@ -23,6 +24,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api', consoleRouter);
 app.use('/api/support', supportRouter);
+app.use('/api/v2/webhooks', webhookRouter);
 app.use('/api/brand-files', express.static(brandDir, { index: false, dotfiles: 'deny' }));
 
 app.get('/api/corporate/status', async (_req, res) => {
