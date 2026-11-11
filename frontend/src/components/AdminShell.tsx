@@ -28,24 +28,25 @@ type Group = { id: string; label: string; items: Item[] };
 const GROUPS: Group[] = [
   { id: 'company', label: 'menu.company', items: [{ to: '/admin/orgs', label: 'menu.orgs', id: 'orgs' }] },
   {
-    id: 'service',
-    label: 'menu.service',
-    items: [
-      { to: '/admin/risk', label: 'menu.risk', id: 'risk' },
-      { to: '/admin/revenue', label: 'menu.revenue', id: 'revenue' },
-      { to: '/admin/usage', label: 'menu.usage', id: 'usage' },
-    ],
-  },
-  {
     id: 'ops',
     label: 'menu.ops',
     items: [
-      { to: '/admin/fees', label: 'menu.fees', id: 'fees' },
-      { to: '/admin/org-ops', label: 'menu.orgOps', id: 'orgOps' },
       { to: '/admin/users', label: 'menu.users', id: 'users' },
+      { to: '/admin/card-issue', label: 'menu.cardIssue', id: 'cardIssue' },
+      { to: '/admin/issued-cards', label: 'menu.issuedCards', id: 'issuedCards' },
       { to: '/admin/activity', label: 'menu.activity', id: 'activity' },
+      { to: '/admin/risk', label: 'menu.risk', id: 'risk' },
+    ],
+  },
+  {
+    id: 'service',
+    label: 'menu.service',
+    items: [
+      { to: '/admin/fees', label: 'menu.fees', id: 'fees' },
       { to: '/admin/corp', label: 'menu.corp', id: 'corp' },
       { to: '/admin/support', label: 'menu.support', id: 'support' },
+      { to: '/admin/staff', label: 'menu.staff', id: 'staff' },
+      { to: '/admin/revenue', label: 'menu.revenue', id: 'revenue' },
     ],
   },
   {
@@ -62,11 +63,11 @@ const GROUPS: Group[] = [
 ];
 
 const ROLE_MENUS: Record<string, string[]> = {
-  hq: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'brand', 'access', 'platform', 'manual', 'link'],
-  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'access', 'manual'],
+  hq: ['dashboard', 'orgs', 'users', 'cardIssue', 'issuedCards', 'activity', 'staff', 'fees', 'corp', 'support', 'risk', 'revenue', 'brand', 'access', 'platform', 'manual', 'link'],
+  admin: ['dashboard', 'orgs', 'users', 'cardIssue', 'issuedCards', 'activity', 'staff', 'fees', 'corp', 'support', 'risk', 'revenue', 'access', 'manual'],
   accountant: ['dashboard', 'revenue', 'fees', 'activity', 'support', 'manual'],
-  general: ['dashboard', 'orgs', 'users', 'usage', 'activity', 'support', 'manual'],
-  operator: ['dashboard', 'usage', 'activity', 'support', 'manual'],
+  general: ['dashboard', 'orgs', 'users', 'cardIssue', 'issuedCards', 'activity', 'support', 'manual'],
+  operator: ['dashboard', 'issuedCards', 'activity', 'support', 'manual'],
 };
 
 function allowedIds(account: SessionAccount) {

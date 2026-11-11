@@ -62,14 +62,23 @@ export default function ConsolePage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const path = useLocation().pathname;
-  const section = path.includes('/fees') ? 'fees' : path.includes('/users') ? 'users' : path.includes('/usage') || path.includes('/cards') ? 'cards' : path.includes('/activity') ? 'activity' : 'orgs';
+  const section = path.includes('/fees')
+    ? 'fees'
+    : path.includes('/staff') || path.includes('/org-ops') || path.includes('/users')
+      ? 'users'
+      : path.includes('/usage') || path.includes('/cards')
+        ? 'cards'
+        : path.includes('/activity')
+          ? 'activity'
+          : 'orgs';
   const [data, setData] = useState<Overview | null>(null);
   const [selectedId, setSelectedId] = useState('');
   const [error, setError] = useState('');
   const [poolCards, setPoolCards] = useState('45');
   const [poolLimit, setPoolLimit] = useState('100000');
   const [orgForm, setOrgForm] = useState({ name: '', cardQuota: '5', limitBudget: '1000' });
-  const [personForm, setPersonForm] = useState({ role: 'user', staffRole: 'operator', name: '', email: '', password: '', spendMode: 'shared' });
+  const staffOnly = path.includes('/staff') || path.includes('/org-ops');
+  const [personForm, setPersonForm] = useState({ role: staffOnly ? 'org' : 'user', staffRole: 'operator', name: '', email: '', password: '', spendMode: 'shared' });
   const [cardForm, setCardForm] = useState({ userId: '', name: 'Team card', format: 'virtual', cardLimit: '100', spendMode: 'shared' });
   const [fundForm, setFundForm] = useState({ fundingMode: 'shared', prefundedBudget: '0' });
   const [brandForm, setBrandForm] = useState({ brandName: '', logoUrl: '', slug: '', customDomain: '', accentColor: '' });
@@ -228,14 +237,14 @@ export default function ConsolePage() {
           </> : null}
 
           {section === 'users' ? <>
-            <form className="panel" onSubmit={(event) => { event.preventDefault(); void run('/api/accounts', { ...personForm, role: selected.level === 'hq' ? 'hq' : personForm.role, staffRole: personForm.staffRole, orgId: selected.id }); }}>
-              <h2>{t('account.title')}</h2>
-              <p className="hint">{t('staff.hint')}</p>
+            <form className="panel" onSubmit={(event) => { event.preventDefault(); void run('/api/accounts', { ...personForm, role: selected.level === 'hq' ? 'hq' : (staffOnly ? 'org' : personForm.role), staffRole: personForm.staffRole, orgId: selected.id }); }}>
+              <h2>{staffOnly ? t('biz.staffTitle') : t('account.title')}</h2>
+              <p className="hint">{staffOnly ? t('biz.staffLead') : t('staff.hint')}</p>
               <div className="fields">
                 <label>{t('staff.kind')}
-                  <select value={selected.level === 'hq' ? 'hq' : personForm.role} onChange={(e) => setPersonForm({ ...personForm, role: e.target.value })} disabled={selected.level === 'hq'}>
+                  <select value={selected.level === 'hq' ? 'hq' : (staffOnly ? 'org' : personForm.role)} onChange={(e) => setPersonForm({ ...personForm, role: e.target.value })} disabled={selected.level === 'hq' || staffOnly}>
                     {selected.level === 'hq' ? <option value="hq">{t('shell.roleHq')}</option> : null}
-                    {selected.level !== 'hq' ? <option value="user">{t('staff.user')}</option> : null}
+                    {selected.level !== 'hq' && !staffOnly ? <option value="user">{t('staff.user')}</option> : null}
                     {selected.level !== 'hq' ? <option value="org">{t('account.operator')}</option> : null}
                   </select>
                 </label>

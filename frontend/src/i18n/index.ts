@@ -11,6 +11,8 @@ import shellPack from './shellPack';
 import menuPack from './menuPack';
 import supportPack from './supportPack';
 import corpPack from './corpPack';
+import bizPack from './bizPack';
+import platformPack from './platformPack';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'ko', name: '한국어' },
@@ -43,6 +45,8 @@ for (const lang of Object.keys(shellPack) as LanguageCode[]) {
   i18n.addResourceBundle(lang, 'translation', menuPack[lang], true, true);
   i18n.addResourceBundle(lang, 'translation', supportPack[lang], true, true);
   i18n.addResourceBundle(lang, 'translation', corpPack[lang], true, true);
+  i18n.addResourceBundle(lang, 'translation', bizPack[lang], true, true);
+  i18n.addResourceBundle(lang, 'translation', platformPack[lang], true, true);
 }
 
 if (typeof document !== 'undefined') document.documentElement.lang = initial;

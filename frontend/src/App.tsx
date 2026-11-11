@@ -11,6 +11,7 @@ import OrgRegisterPage from './pages/OrgRegisterPage';
 import CorporatePage from './pages/CorporatePage';
 import SupportPortalPage from './pages/SupportPortalPage';
 import UserPage from './pages/UserPage';
+import { CardIssuePage, IssuedCardsPage, MembersPage, SpendHistoryPage } from './pages/BizPages';
 
 export default function App() {
   return (
@@ -27,11 +28,14 @@ export default function App() {
           <Route path="orgs" element={<OrgRegisterPage />} />
           <Route path="risk" element={<RiskPage />} />
           <Route path="revenue" element={<RevenuePage />} />
-          <Route path="usage" element={<ConsolePage />} />
+          <Route path="usage" element={<Navigate to="/admin/activity" replace />} />
           <Route path="fees" element={<ConsolePage />} />
-          <Route path="org-ops" element={<ConsolePage />} />
-          <Route path="users" element={<ConsolePage />} />
-          <Route path="activity" element={<ConsolePage />} />
+          <Route path="org-ops" element={<Navigate to="/admin/staff" replace />} />
+          <Route path="staff" element={<ConsolePage />} />
+          <Route path="users" element={<MembersPage />} />
+          <Route path="card-issue" element={<CardIssuePage />} />
+          <Route path="issued-cards" element={<IssuedCardsPage />} />
+          <Route path="activity" element={<SpendHistoryPage />} />
           <Route path="corp" element={<CorporatePage />} />
           <Route path="support" element={<SupportPortalPage />} />
           <Route path="brand" element={<BrandPage />} />

@@ -4,6 +4,7 @@ import { config, wirexCorporate } from './config.js';
 import { brandDir } from './brandFiles.js';
 import { fetchCorporateConfig, fetchPartnerToken } from './clients/corporateClient.js';
 import { publicCorp } from './corpStore.js';
+import bizOpsRouter from './routes/bizOps.js';
 import consoleRouter from './routes/console.js';
 import corporateRouter from './routes/corporate.js';
 import supportRouter from './routes/support.js';
@@ -27,6 +28,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api', consoleRouter);
+app.use('/api/biz', bizOpsRouter);
 app.use('/api/corporate', corporateRouter);
 app.use('/api/support', supportRouter);
 app.use('/api/v2/webhooks', webhookRouter);

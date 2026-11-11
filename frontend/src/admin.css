@@ -5,6 +5,8 @@ html {
   --shell-card-bg: #ffffff;
   --shell-card-head-bg: #f8f9fa;
   --shell-card-border: #e5e7eb;
+  /* 모든 관리 표 thead 공통: 기존 #f8f9fa 보다 한 톤 어두운 그레이 파스텔 */
+  --table-head-bg: #e4e7ed;
   --shell-chrome-logo-h: 4rem;
   --shell-chrome-nav-row-h: 2.25rem;
 }
@@ -503,6 +505,30 @@ body:has(.ac-chrome) {
   padding: 0 8px;
   box-sizing: border-box;
 }
+.panel input[type="checkbox"],
+.panel input[type="radio"],
+.reg-grid input[type="checkbox"],
+.reg-grid input[type="radio"],
+.cb-work input[type="checkbox"],
+.cb-work input[type="radio"] {
+  display: inline-block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.access-panel .access-matrix input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px;
+  vertical-align: middle;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
 .reg-actions { padding: 0 18px 16px; }
 .reg-actions button, .panel button, .cb-work button[type="submit"] {
   height: 28px;
@@ -548,7 +574,7 @@ body:has(.ac-chrome) {
   text-align: left;
 }
 .panel > table:not(.desk-table) th {
-  background: #f8f9fa;
+  background: var(--table-head-bg);
   font-weight: 700;
   text-align: center;
 }
@@ -560,7 +586,7 @@ body:has(.ac-chrome) {
 .desk-stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .stat-row strong.plastic { color: #0f766e; }
 .desk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.desk-table th { background: #f8f9fa; font-weight: 700; white-space: nowrap; }
+.desk-table th { background: var(--table-head-bg); font-weight: 700; white-space: nowrap; }
 .desk-table th, .desk-table td { border: 1px solid #e5e7eb; text-align: center; padding: 6px 8px; vertical-align: middle; line-height: 1.4; white-space: nowrap; }
 .desk-table .num { text-align: center; font-variant-numeric: tabular-nums; }
 .desk-table tr.is-low td { background: #fffbeb; }
@@ -594,7 +620,7 @@ body:has(.ac-chrome) {
 }
 .panel .desk-table th,
 .panel > table.fee-grid th {
-  background: #f8f9fa;
+  background: var(--table-head-bg);
   font-weight: 700;
   white-space: nowrap;
 }

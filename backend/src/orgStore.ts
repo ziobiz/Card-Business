@@ -67,19 +67,36 @@ export type Account = {
   staffRole?: StaffRole;
   primary?: boolean;
   spendMode?: SpendMode;
+  /** 개인기명 카드용 회원 필드 */
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  wirexEmployeeId?: string;
 };
+
+export type CardPurpose = 'company' | 'personal';
 
 export type BizCard = {
   id: string;
   orgId: string;
+  /** 회사기명이면 빈 문자열 가능 */
   userId: string;
   name: string;
   format: 'virtual' | 'plastic';
-  status: 'active' | 'blocked' | 'closed';
+  status: 'active' | 'blocked' | 'closed' | 'requested' | 'not_activated';
   spendMode?: SpendMode;
   cardLimit?: number;
   createdAt: string;
   monthKey?: string;
+  /** Wirex 카드 ID — Wirex API 호출용. Wirex에는 org 구분 없음 */
+  wirexCardId?: string;
+  purpose?: CardPurpose;
+  wirexEmployeeId?: string;
+  nameOnCard?: string;
+  orgCode?: string;
+  dailyLimit?: number;
+  monthlyLimit?: number;
+  transactionLimit?: number;
 };
 
 export type Spend = {
@@ -207,13 +224,34 @@ function normalize(data: Db): Db {
   return data;
 }
 
-export const MENU_IDS = ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'brand', 'access', 'platform', 'manual', 'link'] as const;
+export const MENU_IDS = [
+  'dashboard',
+  'orgs',
+  'users',
+  'cardIssue',
+  'issuedCards',
+  'activity',
+  'staff',
+  'fees',
+  'corp',
+  'support',
+  'risk',
+  'revenue',
+  'brand',
+  'access',
+  'platform',
+  'manual',
+  'link',
+  // legacy aliases kept so stored menuAccess does not break
+  'usage',
+  'orgOps',
+] as const;
 
 export const DEFAULT_ROLE_MENUS: Record<StaffRole, string[]> = {
-  admin: ['dashboard', 'orgs', 'risk', 'revenue', 'usage', 'fees', 'orgOps', 'users', 'activity', 'corp', 'support', 'access', 'manual'],
+  admin: ['dashboard', 'orgs', 'users', 'cardIssue', 'issuedCards', 'activity', 'staff', 'fees', 'corp', 'support', 'risk', 'revenue', 'access', 'manual'],
   accountant: ['dashboard', 'revenue', 'fees', 'activity', 'support', 'manual'],
-  general: ['dashboard', 'orgs', 'users', 'usage', 'activity', 'support', 'manual'],
-  operator: ['dashboard', 'usage', 'activity', 'support', 'manual'],
+  general: ['dashboard', 'orgs', 'users', 'cardIssue', 'issuedCards', 'activity', 'support', 'manual'],
+  operator: ['dashboard', 'issuedCards', 'activity', 'support', 'manual'],
 };
 
 export function roleMenus(db: Db): Record<StaffRole, string[]> {

@@ -4,6 +4,8 @@ import multer from 'multer';
 import { config, wirexCorporate } from '../config.js';
 import { brandDir, brandKinds, removeBrandFile, saveBrandImage, type BrandKind } from '../brandFiles.js';
 import { generateOtpSecret, otpAuthUrl, verifyTotp } from '../lib/totp.js';
+import { patchPlatform, readPlatform } from '../platformStore.js';
+import { buildServerSummary } from '../serverMonitor.js';
 import {
   chargeFits,
   checkPassword,
@@ -455,25 +457,77 @@ router.get('/platform', (req, res) => {
   const root = db.orgs.find((org) => org.id === actor.orgId);
   if (!root) return res.status(404).json({ error: 'org_missing' });
   const scope = descendantIds(db, root.id);
-  const base = 'business.icocard.net';
+  const plat = readPlatform();
+  const base = (plat.publicHost || 'business.icocard.net').trim().toLowerCase() || 'business.icocard.net';
+  const sslSans = (() => {
+    try {
+      return (buildServerSummary().ssl.sanDnsNames as string[]) || [];
+    } catch {
+      return [] as string[];
+    }
+  })();
+  const orgs = db.orgs.filter((org) => scope.has(org.id)).map((org) => {
+    const domain = (org.customDomain || '').trim().toLowerCase();
+    const slug = (org.slug || '').trim().toLowerCase();
+    const host = domain || (slug ? `${slug}.${base}` : base);
+    const linked = !host || sslSans.length === 0
+      ? 'unknown'
+      : sslSans.some((san) => san === host || san === `*.${host.split('.').slice(1).join('.')}`)
+        ? 'match'
+        : 'mismatch';
+    return {
+      id: org.id,
+      name: org.name,
+      level: org.level,
+      slug,
+      customDomain: domain,
+      loginHost: host,
+      sslLink: linked,
+    };
+  });
   res.json({
     publicHost: base,
+    publicApiBase: plat.publicApiBase || wirexCorporate.apiBase,
     chainId: wirexCorporate.chainId,
     apiBase: wirexCorporate.apiBase,
-    orgs: db.orgs.filter((org) => scope.has(org.id)).map((org) => {
-      const domain = (org.customDomain || '').trim().toLowerCase();
-      const slug = (org.slug || '').trim().toLowerCase();
-      const host = domain || (slug ? `${slug}.${base}` : base);
-      return {
-        id: org.id,
-        name: org.name,
-        level: org.level,
-        slug,
-        customDomain: domain,
-        loginHost: host,
-      };
-    }),
+    settings: plat,
+    sslSans,
+    orgs,
   });
+});
+
+router.get('/platform/server', (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || actor.role !== 'hq') return res.status(403).json({ error: 'hq_only' });
+  try {
+    res.json(buildServerSummary());
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : 'server_summary_failed' });
+  }
+});
+
+router.put('/platform/settings', (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || actor.role !== 'hq') return res.status(403).json({ error: 'hq_only' });
+  const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>;
+  const num = (key: string, fallback: number) => {
+    const n = Number(body[key]);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  };
+  const patch: Record<string, string | number> = {};
+  if (body.publicHost != null) patch.publicHost = String(body.publicHost).trim().toLowerCase();
+  if (body.publicApiBase != null) patch.publicApiBase = String(body.publicApiBase).trim();
+  if (body.sslCertPath != null) patch.sslCertPath = String(body.sslCertPath).trim();
+  if (body.sslLeDomain != null) patch.sslLeDomain = String(body.sslLeDomain).trim().toLowerCase();
+  if (body.uiRefreshSec != null) patch.uiRefreshSec = num('uiRefreshSec', 120);
+  if (body.contractDiskGb != null) patch.contractDiskGb = num('contractDiskGb', 0);
+  if (body.contractTrafficGb != null) patch.contractTrafficGb = num('contractTrafficGb', 0);
+  if (body.contractTrafficUsedGb != null) patch.contractTrafficUsedGb = num('contractTrafficUsedGb', 0);
+  if (body.contractStart != null) patch.contractStart = String(body.contractStart).trim();
+  if (body.contractEnd != null) patch.contractEnd = String(body.contractEnd).trim();
+  if (body.note != null) patch.note = String(body.note).trim().slice(0, 500);
+  const saved = patchPlatform(patch);
+  res.json({ ok: true, settings: saved, server: buildServerSummary() });
 });
 
 function tree(db: ReturnType<typeof readDb>, org: Org): Record<string, unknown> {

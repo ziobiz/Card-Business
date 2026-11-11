@@ -29,7 +29,9 @@ function canManage(actor: { role: string; orgId: string }) {
 
 function fail(res: { status: (n: number) => { json: (b: unknown) => void } }, e: unknown) {
   if (e instanceof WirexError) {
-    patchCorp({ lastError: e.message });
+    // KYB 전 카드 capability 거절은 예상 동작이라 상단 '최근 오류'에 고정하지 않는다.
+    const sticky = !/Capability is not active/i.test(e.message);
+    if (sticky) patchCorp({ lastError: e.message });
     return res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({
       error: 'wirex_error',
       message: e.message,
@@ -269,6 +271,22 @@ router.post('/employees/invite', async (req, res) => {
   }
 });
 
+router.get('/employees/search', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || !canManage(actor)) return res.status(403).json({ error: 'staff_forbidden' });
+  try {
+    const term = String(req.query.term || '').trim();
+    if (term.length < 2) return res.status(400).json({ error: 'search_term_short' });
+    const q = new URLSearchParams({ term });
+    if (req.query.page_number) q.set('page_number', String(req.query.page_number));
+    if (req.query.page_size) q.set('page_size', String(req.query.page_size));
+    const data = await corpGet(`/api/v1/employees/search?${q.toString()}`);
+    res.json(data);
+  } catch (e) {
+    fail(res, e);
+  }
+});
+
 router.get('/cards', async (req, res) => {
   const actor = requireActor(req, res);
   if (!actor || !canManage(actor)) return res.status(403).json({ error: 'staff_forbidden' });
@@ -296,6 +314,45 @@ router.get('/cards/fees/:type/:country', async (req, res) => {
   }
 });
 
+async function resolveCardDeliveryId(options: {
+  type: 'virtual' | 'plastic';
+  country: string;
+  tokenAddress?: string;
+  deliveryId?: number;
+  deliveryProvider?: string;
+}) {
+  let deliveryId = options.deliveryId;
+  let feeToken: string | null = options.tokenAddress || null;
+  if (deliveryId && !Number.isNaN(deliveryId) && deliveryId > 0) {
+    return { deliveryId, feeToken };
+  }
+  type FeeQuote = {
+    estimated_payment_amounts?: Array<{ token_address?: string; token_symbol?: string }>;
+  };
+  let fees: FeeQuote | null = null;
+  try {
+    fees = (await corpGet(`/api/v1/cards/${options.type}/fees/${options.country}`)) as FeeQuote;
+  } catch (feeErr) {
+    if (!(feeErr instanceof WirexError && feeErr.status === 400)) throw feeErr;
+  }
+  if (!fees) return { deliveryId: undefined as number | undefined, feeToken };
+  if (!feeToken) {
+    const amounts = fees.estimated_payment_amounts || [];
+    const prefer = ['USDC', 'WUSD', 'USDT', 'CUSD'];
+    const picked =
+      amounts.find((row: { token_symbol?: string }) => prefer.includes(String(row.token_symbol || ''))) || amounts[0];
+    feeToken = picked?.token_address ? String(picked.token_address) : null;
+  }
+  if (!feeToken) throw new Error('card_fee_token_missing');
+  const paymentBody: Record<string, unknown> = { token_address: feeToken };
+  if (options.type === 'plastic') paymentBody.delivery_provider = options.deliveryProvider || 'DHL';
+  const paid = (await corpPost(`/api/v2/cards/${options.type}/fees/${options.country}/payment`, paymentBody)) as {
+    delivery_id?: number | string;
+  };
+  if (paid?.delivery_id == null) throw new Error('card_delivery_id_missing');
+  return { deliveryId: Number(paid.delivery_id), feeToken };
+}
+
 router.post('/cards/virtual', async (req, res) => {
   const actor = requireActor(req, res);
   if (!actor || !canManage(actor)) return res.status(403).json({ error: 'staff_forbidden' });
@@ -308,24 +365,77 @@ router.post('/cards/virtual', async (req, res) => {
       name_on_card: body.name_on_card,
     };
     if (body.employee_id) payload.employee_id = body.employee_id;
-
-    let deliveryId = body.delivery_id ? Number(body.delivery_id) : undefined;
-    if (!deliveryId) {
-      try {
-        await corpGet(`/api/v1/cards/virtual/fees/${country}`);
-        const paid = (await corpPost(`/api/v2/cards/virtual/fees/${country}/payment`, {})) as {
-          delivery_id?: number | string;
-        };
-        if (paid?.delivery_id != null) deliveryId = Number(paid.delivery_id);
-      } catch (feeErr) {
-        if (!(feeErr instanceof WirexError && feeErr.status === 400)) throw feeErr;
-        // fees not enforced in this environment
-      }
-    }
-    if (deliveryId != null && !Number.isNaN(deliveryId)) payload.delivery_id = deliveryId;
-
+    const resolved = await resolveCardDeliveryId({
+      type: 'virtual',
+      country,
+      tokenAddress: body.token_address ? String(body.token_address) : undefined,
+      deliveryId: body.delivery_id ? Number(body.delivery_id) : undefined,
+    });
+    if (resolved.deliveryId != null && resolved.deliveryId > 0) payload.delivery_id = resolved.deliveryId;
     const data = await corpPost('/api/v2/cards/virtual', payload);
-    res.json({ ...(data as object), delivery_id: deliveryId ?? null, country });
+    patchCorp({ lastError: '' });
+    res.json({
+      ...(data as object),
+      delivery_id: resolved.deliveryId ?? null,
+      country,
+      token_address: resolved.feeToken,
+    });
+  } catch (e) {
+    fail(res, e);
+  }
+});
+
+router.post('/cards/plastic', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor || !canManage(actor)) return res.status(403).json({ error: 'staff_forbidden' });
+  try {
+    const body = req.body as Record<string, unknown> & {
+      delivery_address?: {
+        line1?: string;
+        line2?: string;
+        city?: string;
+        state?: string;
+        postal_code?: string;
+        country?: string;
+      };
+    };
+    const saved = readCorp();
+    const address = body.delivery_address || {};
+    const country = String(address.country || body.country || saved.registrationCountry || 'KR').toUpperCase();
+    if (!address.line1 || !address.city || !address.postal_code || !country) {
+      return res.status(400).json({ error: 'plastic_delivery_address_required' });
+    }
+    const deliveryProvider = String(body.delivery_provider || 'DHL');
+    const payload: Record<string, unknown> = {
+      card_name: body.card_name,
+      name_on_card: body.name_on_card,
+      delivery_provider: deliveryProvider,
+      delivery_address: {
+        line1: String(address.line1 || ''),
+        line2: String(address.line2 || ''),
+        city: String(address.city || ''),
+        state: String(address.state || ''),
+        postal_code: String(address.postal_code || ''),
+        country,
+      },
+    };
+    if (body.employee_id) payload.employee_id = body.employee_id;
+    const resolved = await resolveCardDeliveryId({
+      type: 'plastic',
+      country,
+      tokenAddress: body.token_address ? String(body.token_address) : undefined,
+      deliveryId: body.delivery_id ? Number(body.delivery_id) : undefined,
+      deliveryProvider,
+    });
+    if (resolved.deliveryId != null && resolved.deliveryId > 0) payload.delivery_id = resolved.deliveryId;
+    const data = await corpPost('/api/v2/cards/plastic', payload);
+    patchCorp({ lastError: '' });
+    res.json({
+      ...(data as object),
+      delivery_id: resolved.deliveryId ?? null,
+      country,
+      token_address: resolved.feeToken,
+    });
   } catch (e) {
     fail(res, e);
   }

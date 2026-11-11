@@ -77,7 +77,7 @@ type Activity = {
 
 export default function CorporatePage() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<Tab>('onboard');
+  const [tab] = useState<Tab>('onboard');
   const [ws, setWs] = useState<Workspace | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
@@ -108,8 +108,56 @@ export default function CorporatePage() {
     department: '',
     job_title: '',
   });
-  const [cardForm, setCardForm] = useState({ card_name: '', name_on_card: '', employee_id: '' });
+  type CardPurpose = 'company' | 'personal';
+  type PersonalSource = 'existing' | 'new';
+  type IssueFields = {
+    purpose: CardPurpose;
+    personalSource: PersonalSource;
+    card_name: string;
+    name_on_card: string;
+    employee_id: string;
+    employee_search: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    role_id: string;
+  };
+  const emptyIssue = (): IssueFields => ({
+    purpose: 'company',
+    personalSource: 'existing',
+    card_name: '',
+    name_on_card: '',
+    employee_id: '',
+    employee_search: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    role_id: '',
+  });
+  const [cardForm, setCardForm] = useState<IssueFields>(emptyIssue());
+  const [plasticForm, setPlasticForm] = useState<IssueFields & {
+    delivery_provider: string;
+    line1: string;
+    line2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  }>({
+    ...emptyIssue(),
+    delivery_provider: 'DHL',
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: 'KR',
+  });
   const [limits, setLimits] = useState<Record<string, { daily: string; monthly: string; perTx: string }>>({});
+  const [editingLimits, setEditingLimits] = useState<Record<string, boolean>>({});
+  const [employeeHits, setEmployeeHits] = useState<Employee[]>([]);
   const [onchain, setOnchain] = useState<{
     contracts?: Record<string, string>;
     endpoints?: { rpcUrl?: string; bundlerUrl?: string; blockExplorerUrl?: string; chainName?: string };
@@ -262,6 +310,220 @@ export default function CorporatePage() {
     if (tab === 'activities' && ws?.profile?.corporationTokenReady) void loadActivities();
   }, [tab, ws?.profile?.corporationTokenReady]);
 
+  useEffect(() => {
+    if (!roles[0]?.id) return;
+    setCardForm((prev) => (prev.role_id ? prev : { ...prev, role_id: roles[0].id }));
+    setPlasticForm((prev) => (prev.role_id ? prev : { ...prev, role_id: roles[0].id }));
+  }, [roles]);
+
+  async function searchEmployees(term: string) {
+    const q = term.trim();
+    if (q.length < 2) {
+      setEmployeeHits([]);
+      return;
+    }
+    try {
+      const row = await apiAuth<{ employees?: Employee[] }>(`/api/corporate/employees/search?term=${encodeURIComponent(q)}`);
+      setEmployeeHits(row.employees || []);
+    } catch {
+      const lower = q.toLowerCase();
+      setEmployeeHits(
+        employees.filter((e) =>
+          [e.email, e.first_name, e.last_name, e.id].some((v) => String(v || '').toLowerCase().includes(lower)),
+        ),
+      );
+    }
+  }
+
+  function employeeLabel(row: Employee) {
+    return [row.first_name, row.last_name].filter(Boolean).join(' ') || row.email || row.id;
+  }
+
+  async function resolveEmployeeId(fields: IssueFields): Promise<string | undefined> {
+    if (fields.purpose === 'company') return undefined;
+    if (fields.personalSource === 'existing') {
+      if (!fields.employee_id) throw new Error(t('corp.employeeRequired'));
+      return fields.employee_id;
+    }
+    // Wirex invite: first/last/email/phone/role 전부 필수. 카드 API 자체는 email/phone 없음.
+    if (!fields.first_name || !fields.last_name || !fields.email || !fields.phone || !fields.role_id) {
+      throw new Error(t('corp.employeeProfileIncomplete'));
+    }
+    await apiAuth('/api/corporate/employees/invite', {
+      method: 'POST',
+      body: JSON.stringify({
+        first_name: fields.first_name,
+        last_name: fields.last_name,
+        email: fields.email,
+        phone: fields.phone,
+        role_id: fields.role_id,
+      }),
+    });
+    await loadEmployees();
+    const listed = await apiAuth<{ employees?: Employee[] }>('/api/corporate/employees');
+    const found = (listed.employees || []).find((e) => e.email?.toLowerCase() === fields.email.toLowerCase());
+    if (!found?.id) throw new Error(t('corp.employeeCreateLookupFailed'));
+    return found.id;
+  }
+
+  function renderIssueIdentityFields(
+    fields: IssueFields,
+    setFields: (next: IssueFields) => void,
+  ) {
+    const isCompany = fields.purpose === 'company';
+    const isPersonal = fields.purpose === 'personal';
+    const isNew = isPersonal && fields.personalSource === 'new';
+    const isExisting = isPersonal && fields.personalSource === 'existing';
+    return (
+      <>
+        <div className="support-fields" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+          <label>
+            {t('corp.cardPurpose')}
+            <select
+              value={fields.purpose}
+              onChange={(e) => {
+                const purpose = e.target.value as CardPurpose;
+                setFields({
+                  ...fields,
+                  purpose,
+                  employee_id: purpose === 'company' ? '' : fields.employee_id,
+                  name_on_card: purpose === 'personal' ? '' : fields.name_on_card,
+                });
+                if (purpose === 'company') setEmployeeHits([]);
+              }}
+              required
+            >
+              <option value="company">{t('corp.purposeCompany')}</option>
+              <option value="personal">{t('corp.purposePersonal')}</option>
+            </select>
+          </label>
+          <label>
+            {t('corp.cardName')}
+            <input
+              value={fields.card_name}
+              onChange={(e) => setFields({ ...fields, card_name: e.target.value })}
+              required
+            />
+          </label>
+          <label>
+            {t('corp.nameOnCard')}
+            <input
+              value={fields.name_on_card}
+              onChange={(e) => setFields({ ...fields, name_on_card: e.target.value })}
+              disabled={!isCompany}
+              required={isCompany}
+              placeholder={isCompany ? 'Acme Inc' : '—'}
+            />
+          </label>
+        </div>
+        <p className="support-note">{isCompany ? t('corp.purposeCompanyHelp') : t('corp.purposePersonalHelp')}</p>
+        {isPersonal ? (
+          <div className="support-fields" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+            <label>
+              {t('corp.personalSource')}
+              <select
+                value={fields.personalSource}
+                onChange={(e) => {
+                  const personalSource = e.target.value as PersonalSource;
+                  setFields({
+                    ...fields,
+                    personalSource,
+                    employee_id: personalSource === 'new' ? '' : fields.employee_id,
+                    employee_search: personalSource === 'new' ? '' : fields.employee_search,
+                  });
+                  if (personalSource === 'new') setEmployeeHits([]);
+                }}
+              >
+                <option value="existing">{t('corp.personalSourceExisting')}</option>
+                <option value="new">{t('corp.personalSourceNew')}</option>
+              </select>
+            </label>
+            {isExisting ? (
+              <>
+                <label>
+                  {t('corp.employeeSearch')}
+                  <input
+                    value={fields.employee_search}
+                    onChange={(e) => {
+                      const employee_search = e.target.value;
+                      setFields({ ...fields, employee_search });
+                      void searchEmployees(employee_search);
+                    }}
+                    placeholder={t('corp.employeeSearchPh')}
+                  />
+                </label>
+                <label>
+                  {t('corp.employeeId')}
+                  <select
+                    value={fields.employee_id}
+                    onChange={(e) => setFields({ ...fields, employee_id: e.target.value })}
+                    required
+                  >
+                    <option value="">—</option>
+                    {(employeeHits.length ? employeeHits : employees).map((row) => (
+                      <option key={row.id} value={row.id}>{employeeLabel(row)}</option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : null}
+            {isNew ? (
+              <>
+                <label>
+                  {t('corp.firstName')}
+                  <input
+                    value={fields.first_name}
+                    onChange={(e) => setFields({ ...fields, first_name: e.target.value })}
+                    required
+                  />
+                </label>
+                <label>
+                  {t('corp.lastName')}
+                  <input
+                    value={fields.last_name}
+                    onChange={(e) => setFields({ ...fields, last_name: e.target.value })}
+                    required
+                  />
+                </label>
+                <label>
+                  {t('corp.email')}
+                  <input
+                    type="email"
+                    value={fields.email}
+                    onChange={(e) => setFields({ ...fields, email: e.target.value })}
+                    required
+                  />
+                </label>
+                <label>
+                  {t('corp.phone')}
+                  <input
+                    value={fields.phone}
+                    onChange={(e) => setFields({ ...fields, phone: e.target.value })}
+                    placeholder="+8210..."
+                    required
+                  />
+                </label>
+                <label>
+                  {t('corp.roleId')}
+                  <select
+                    value={fields.role_id}
+                    onChange={(e) => setFields({ ...fields, role_id: e.target.value })}
+                    required
+                  >
+                    <option value="">—</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>{role.name || role.id}</option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
   async function run(label: string, action: () => Promise<void>) {
     setBusy(label);
     setError('');
@@ -273,6 +535,27 @@ export default function CorporatePage() {
     } finally {
       setBusy('');
     }
+  }
+
+  function confirmCardDanger(action: 'block' | 'unblock' | 'close', card: CardRow): boolean {
+    const cardLabel = card.card_data?.card_name || card.card_data?.card_number_last_4 || card.id;
+    const actionLabel = t(`corp.${action}`);
+    const first = window.confirm(
+      t('corp.confirmCardAction1', { action: actionLabel, card: cardLabel, id: card.id }),
+    );
+    if (!first) return false;
+    const second = window.confirm(
+      t('corp.confirmCardAction2', { action: actionLabel, card: cardLabel, id: card.id }),
+    );
+    return second;
+  }
+
+  async function runCardDanger(action: 'block' | 'unblock' | 'close', card: CardRow) {
+    if (!confirmCardDanger(action, card)) return;
+    await run(action, async () => {
+      await apiAuth(`/api/corporate/cards/${card.id}/${action}`, { method: 'PUT', body: '{}' });
+      await loadCards();
+    });
   }
 
   async function saveProfile(event: FormEvent) {
@@ -331,20 +614,9 @@ export default function CorporatePage() {
         {error ? <p className="banner-bad">{error}</p> : null}
         {ws?.profile?.lastError ? <p className="banner-bad">{t('corp.lastError')}: {ws.profile.lastError}</p> : null}
 
-        <div className="support-tabs">
-          {([
-            ['onboard', t('corp.tabOnboard')],
-            ['employees', t('corp.tabEmployees')],
-            ['cards', t('corp.tabCards')],
-            ['activities', t('corp.tabActivities')],
-          ] as const).map(([id, label]) => (
-            <button key={id} type="button" className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <p className="support-note">{t('corp.tabOnboardHelp')}</p>
 
-        {tab === 'onboard' ? (
+        {true ? (
           <>
             <div className="support-block">
               <h3>{t('corp.steps')}</h3>
@@ -390,8 +662,11 @@ export default function CorporatePage() {
                   {t('corp.genOwner')}
                 </button>
               </div>
-              <div className="support-fields" style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
-                <label>{t('corp.privateKey')}<input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="0x..." /></label>
+              <div className="corp-inline-row">
+                <label className="corp-inline-field">
+                  {t('corp.privateKey')}
+                  <input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="0x..." />
+                </label>
                 <button
                   type="button"
                   className="btn-compact"
@@ -479,7 +754,6 @@ export default function CorporatePage() {
                     }
                     if (row.deployed?.transactionHash) setCalldata(`tx: ${row.deployed.transactionHash}`);
                     await loadWorkspace();
-                    setTab('employees');
                   })}
                 >
                   {t('corp.fullOnboard')}
@@ -555,7 +829,7 @@ export default function CorporatePage() {
               <h3>{t('corp.kybToken')}</h3>
               <p className="support-note">{t('corp.kybHelp')}</p>
               <form
-                className="support-fields"
+                className="corp-kyb-form"
                 onSubmit={(event) => {
                   event.preventDefault();
                   void run('kyb', async () => {
@@ -565,7 +839,7 @@ export default function CorporatePage() {
                   });
                 }}
               >
-                <label>
+                <label className="corp-kyb-level">
                   {t('corp.level')}
                   <select value={kybLevel} onChange={(e) => setKybLevel(e.target.value)}>
                     <option value="SDD">SDD</option>
@@ -574,14 +848,17 @@ export default function CorporatePage() {
                     <option value="XDDOpenPaydBase">XDDOpenPaydBase</option>
                   </select>
                 </label>
-                <button type="submit" disabled={Boolean(busy) || !ws?.profile?.corporationTokenReady}>{t('corp.openKyb')}</button>
+                <button type="submit" className="btn-compact" disabled={Boolean(busy) || !ws?.profile?.corporationTokenReady}>
+                  {t('corp.openKyb')}
+                </button>
               </form>
               {sdkToken ? (
                 <>
                   <pre className="support-template">{sdkToken}</pre>
-                  <div className="support-template-actions">
+                  <div className="support-template-actions btn-row-left">
                     <button
                       type="button"
+                      className="btn-compact"
                       onClick={() => {
                         void navigator.clipboard.writeText(sdkToken);
                         setCopied(true);
@@ -592,6 +869,7 @@ export default function CorporatePage() {
                     </button>
                     <button
                       type="button"
+                      className="btn-compact"
                       disabled={Boolean(busy)}
                       onClick={() => void run('kybRelaunch', async () => { await launchSumsub(sdkToken); })}
                     >
@@ -631,7 +909,7 @@ export default function CorporatePage() {
           </>
         ) : null}
 
-        {tab === 'employees' ? (
+        {false && tab === 'employees' ? (
           <>
             {!ws?.profile?.corporationTokenReady ? (
               <p className="banner-bad">{t('corp.needLoginFirst')}</p>
@@ -671,26 +949,38 @@ export default function CorporatePage() {
               <h3>{t('corp.employees')}</h3>
               {employees.length ? (
                 <div className="support-table-wrap">
-                  <table>
+                  <table className="corp-cards-table">
                     <thead>
                       <tr>
-                        <th>ID</th>
+                        <th>{t('corp.id')}</th>
                         <th>{t('corp.firstName')}</th>
+                        <th>{t('corp.lastName')}</th>
                         <th>{t('corp.email')}</th>
                         <th>{t('corp.phone')}</th>
                         <th>{t('corp.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {employees.map((row) => (
-                        <tr key={row.id}>
-                          <td>{row.id}</td>
-                          <td>{[row.first_name, row.last_name].filter(Boolean).join(' ')}</td>
-                          <td>{row.email}</td>
-                          <td>{row.phone}</td>
-                          <td>{row.status}</td>
-                        </tr>
-                      ))}
+                      {employees.map((row, idx) => {
+                        const st = String(row.status || '').toLowerCase();
+                        const pill =
+                          st === 'active' ? 'support-api'
+                            : st === 'invited' ? 'support-partial'
+                              : st.includes('block') ? 'support-portal_only'
+                                : 'support-local';
+                        return (
+                          <tr key={row.id} className={idx % 2 === 0 ? 'odd' : 'even'}>
+                            <td>{row.id}</td>
+                            <td>{row.first_name || '—'}</td>
+                            <td>{row.last_name || '—'}</td>
+                            <td>{row.email || '—'}</td>
+                            <td>{row.phone || '—'}</td>
+                            <td>
+                              <span className={`support-pill ${pill}`}>{row.status || '—'}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -702,7 +992,7 @@ export default function CorporatePage() {
           </>
         ) : null}
 
-        {tab === 'cards' ? (
+        {false && tab === 'cards' ? (
           <>
             {!ws?.profile?.corporationTokenReady ? (
               <p className="banner-bad">{t('corp.needLoginFirst')}</p>
@@ -714,37 +1004,82 @@ export default function CorporatePage() {
               className="support-block"
               onSubmit={(event) => {
                 event.preventDefault();
-                void run('issue', async () => {
+                void run('issueVirtual', async () => {
+                  const employee_id = await resolveEmployeeId(cardForm);
                   await apiAuth('/api/corporate/cards/virtual', {
                     method: 'POST',
                     body: JSON.stringify({
                       card_name: cardForm.card_name,
-                      name_on_card: cardForm.name_on_card,
-                      employee_id: cardForm.employee_id || undefined,
+                      name_on_card: cardForm.purpose === 'company' ? cardForm.name_on_card : undefined,
+                      employee_id,
                     }),
                   });
+                  setCardForm({ ...emptyIssue(), role_id: roles[0]?.id || cardForm.role_id });
+                  setEmployeeHits([]);
                   await loadCards();
                 });
               }}
             >
               <h3>{t('corp.issueVirtual')}</h3>
-              <div className="support-fields" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-                <label>{t('corp.cardName')}<input value={cardForm.card_name} onChange={(e) => setCardForm({ ...cardForm, card_name: e.target.value })} required /></label>
-                <label>{t('corp.nameOnCard')}<input value={cardForm.name_on_card} onChange={(e) => setCardForm({ ...cardForm, name_on_card: e.target.value })} required /></label>
-                <label>
-                  {t('corp.employeeId')}
-                  <select value={cardForm.employee_id} onChange={(e) => setCardForm({ ...cardForm, employee_id: e.target.value })}>
-                    <option value="">—</option>
-                    {employees.map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {row.email || row.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              {renderIssueIdentityFields(cardForm, setCardForm)}
               <div className="btn-row-left">
                 <button type="submit" className="btn-compact" disabled={Boolean(busy)}>{t('corp.issueVirtual')}</button>
+              </div>
+            </form>
+
+            <form
+              className="support-block"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void run('issuePlastic', async () => {
+                  const employee_id = await resolveEmployeeId(plasticForm);
+                  await apiAuth('/api/corporate/cards/plastic', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      card_name: plasticForm.card_name,
+                      name_on_card: plasticForm.purpose === 'company' ? plasticForm.name_on_card : undefined,
+                      employee_id,
+                      delivery_provider: plasticForm.delivery_provider || 'DHL',
+                      delivery_address: {
+                        line1: plasticForm.line1,
+                        line2: plasticForm.line2,
+                        city: plasticForm.city,
+                        state: plasticForm.state,
+                        postal_code: plasticForm.postal_code,
+                        country: plasticForm.country || form.registrationCountry || 'KR',
+                      },
+                    }),
+                  });
+                  setPlasticForm({
+                    ...emptyIssue(),
+                    role_id: roles[0]?.id || plasticForm.role_id,
+                    delivery_provider: 'DHL',
+                    line1: '',
+                    line2: '',
+                    city: '',
+                    state: '',
+                    postal_code: '',
+                    country: form.registrationCountry || 'KR',
+                  });
+                  setEmployeeHits([]);
+                  await loadCards();
+                });
+              }}
+            >
+              <h3>{t('corp.issuePlastic')}</h3>
+              <p className="support-note">{t('corp.issuePlasticHelp')}</p>
+              {renderIssueIdentityFields(plasticForm, (next) => setPlasticForm((prev) => ({ ...prev, ...next })))}
+              <div className="support-fields" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+                <label>{t('corp.deliveryProvider')}<input value={plasticForm.delivery_provider} onChange={(e) => setPlasticForm({ ...plasticForm, delivery_provider: e.target.value })} required /></label>
+                <label>{t('corp.addrLine1')}<input value={plasticForm.line1} onChange={(e) => setPlasticForm({ ...plasticForm, line1: e.target.value })} required /></label>
+                <label>{t('corp.addrLine2')}<input value={plasticForm.line2} onChange={(e) => setPlasticForm({ ...plasticForm, line2: e.target.value })} /></label>
+                <label>{t('corp.addrCity')}<input value={plasticForm.city} onChange={(e) => setPlasticForm({ ...plasticForm, city: e.target.value })} required /></label>
+                <label>{t('corp.addrState')}<input value={plasticForm.state} onChange={(e) => setPlasticForm({ ...plasticForm, state: e.target.value })} /></label>
+                <label>{t('corp.addrPostal')}<input value={plasticForm.postal_code} onChange={(e) => setPlasticForm({ ...plasticForm, postal_code: e.target.value })} required /></label>
+                <label>{t('corp.addrCountry')}<input value={plasticForm.country} onChange={(e) => setPlasticForm({ ...plasticForm, country: e.target.value.toUpperCase() })} maxLength={2} required /></label>
+              </div>
+              <div className="btn-row-left">
+                <button type="submit" className="btn-compact" disabled={Boolean(busy)}>{t('corp.issuePlastic')}</button>
               </div>
             </form>
 
@@ -752,7 +1087,7 @@ export default function CorporatePage() {
               <h3>{t('corp.cards')}</h3>
               {cards.length ? (
                 <div className="support-table-wrap">
-                  <table>
+                  <table className="corp-cards-table">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -761,11 +1096,13 @@ export default function CorporatePage() {
                         <th>{t('corp.daily')}</th>
                         <th>{t('corp.monthly')}</th>
                         <th>{t('corp.perTx')}</th>
-                        <th></th>
+                        <th>{t('corp.manage')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {cards.map((card) => (
+                      {cards.map((card) => {
+                        const editing = Boolean(editingLimits[card.id]);
+                        return (
                         <tr key={card.id}>
                           <td>{card.id}</td>
                           <td>{card.card_data?.card_name || '—'} {card.card_data?.card_number_last_4 ? `····${card.card_data.card_number_last_4}` : ''}</td>
@@ -773,47 +1110,64 @@ export default function CorporatePage() {
                           <td>
                             <input
                               value={limits[card.id]?.daily ?? ''}
+                              disabled={!editing || Boolean(busy)}
                               onChange={(e) => setLimits({ ...limits, [card.id]: { ...limits[card.id], daily: e.target.value } })}
                             />
                           </td>
                           <td>
                             <input
                               value={limits[card.id]?.monthly ?? ''}
+                              disabled={!editing || Boolean(busy)}
                               onChange={(e) => setLimits({ ...limits, [card.id]: { ...limits[card.id], monthly: e.target.value } })}
                             />
                           </td>
                           <td>
                             <input
                               value={limits[card.id]?.perTx ?? ''}
+                              disabled={!editing || Boolean(busy)}
                               onChange={(e) => setLimits({ ...limits, [card.id]: { ...limits[card.id], perTx: e.target.value } })}
                             />
                           </td>
                           <td>
-                            <div className="support-template-actions" style={{ gap: 6, flexWrap: 'wrap' }}>
-                              <button
-                                type="button"
-                                disabled={Boolean(busy)}
-                                onClick={() => void run('limit', async () => {
-                                  await apiAuth(`/api/corporate/cards/${card.id}/limit`, {
-                                    method: 'PUT',
-                                    body: JSON.stringify({
-                                      daily_limit: Number(limits[card.id]?.daily ?? -1),
-                                      monthly_limit: Number(limits[card.id]?.monthly ?? -1),
-                                      transaction_limit: Number(limits[card.id]?.perTx ?? -1),
-                                    }),
-                                  });
-                                  await loadCards();
-                                })}
-                              >
-                                {t('corp.setLimit')}
-                              </button>
-                              <button type="button" disabled={Boolean(busy)} onClick={() => void run('block', async () => { await apiAuth(`/api/corporate/cards/${card.id}/block`, { method: 'PUT', body: '{}' }); await loadCards(); })}>{t('corp.block')}</button>
-                              <button type="button" disabled={Boolean(busy)} onClick={() => void run('unblock', async () => { await apiAuth(`/api/corporate/cards/${card.id}/unblock`, { method: 'PUT', body: '{}' }); await loadCards(); })}>{t('corp.unblock')}</button>
-                              <button type="button" disabled={Boolean(busy)} onClick={() => void run('close', async () => { await apiAuth(`/api/corporate/cards/${card.id}/close`, { method: 'PUT', body: '{}' }); await loadCards(); })}>{t('corp.close')}</button>
+                            <div className="corp-cards-actions">
+                              {!editing ? (
+                                <button
+                                  type="button"
+                                  className="btn-compact btn-edit"
+                                  disabled={Boolean(busy)}
+                                  onClick={() => setEditingLimits((prev) => ({ ...prev, [card.id]: true }))}
+                                >
+                                  {t('corp.edit')}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn-compact btn-save"
+                                  disabled={Boolean(busy)}
+                                  onClick={() => void run('limit', async () => {
+                                    await apiAuth(`/api/corporate/cards/${card.id}/limit`, {
+                                      method: 'PUT',
+                                      body: JSON.stringify({
+                                        daily_limit: Number(limits[card.id]?.daily ?? -1),
+                                        monthly_limit: Number(limits[card.id]?.monthly ?? -1),
+                                        transaction_limit: Number(limits[card.id]?.perTx ?? -1),
+                                      }),
+                                    });
+                                    setEditingLimits((prev) => ({ ...prev, [card.id]: false }));
+                                    await loadCards();
+                                  })}
+                                >
+                                  {t('corp.saveLimit')}
+                                </button>
+                              )}
+                              <button type="button" className="btn-compact btn-block" disabled={Boolean(busy)} onClick={() => void runCardDanger('block', card)}>{t('corp.block')}</button>
+                              <button type="button" className="btn-compact btn-unblock" disabled={Boolean(busy)} onClick={() => void runCardDanger('unblock', card)}>{t('corp.unblock')}</button>
+                              <button type="button" className="btn-compact btn-close" disabled={Boolean(busy)} onClick={() => void runCardDanger('close', card)}>{t('corp.close')}</button>
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -825,7 +1179,7 @@ export default function CorporatePage() {
           </>
         ) : null}
 
-        {tab === 'activities' ? (
+        {false && tab === 'activities' ? (
           <>
           <div className="support-block">
             <h3>{t('corp.wallets')}</h3>

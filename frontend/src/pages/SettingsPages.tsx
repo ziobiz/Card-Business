@@ -228,12 +228,12 @@ export function AccessPage() {
   if (!catalog.length) return <p className="boot">{error || t('boot')}</p>;
 
   return (
-    <form className="panel" onSubmit={save}>
+    <form className="panel access-panel" onSubmit={save}>
       <h2>{t('menu.access')}</h2>
       <p className="hint">{t('access.lead')}</p>
       {error ? <p className="banner-bad">{error}</p> : null}
       {saved ? <p className="hint">{t('access.saved')}</p> : null}
-      <table className="desk-table">
+      <table className="desk-table access-matrix">
         <thead>
           <tr>
             <th>{t('access.menu')}</th>
@@ -258,55 +258,474 @@ export function AccessPage() {
   );
 }
 
+type PlatformOrg = {
+  id: string;
+  name: string;
+  level: OrgLevel;
+  slug: string;
+  customDomain: string;
+  loginHost: string;
+  sslLink?: string;
+};
+
+type PlatformSettings = {
+  publicHost: string;
+  publicApiBase: string;
+  sslCertPath: string;
+  sslLeDomain: string;
+  uiRefreshSec: number;
+  contractDiskGb: number;
+  contractTrafficGb: number;
+  contractTrafficUsedGb: number;
+  contractStart: string;
+  contractEnd: string;
+  note: string;
+};
+
+type ServerSummary = {
+  generatedAt: string;
+  uiRefreshSec: number;
+  settings: PlatformSettings;
+  host: {
+    hostname: string;
+    platform: string;
+    release: string;
+    arch: string;
+    cpuCount: number;
+    cpuModel: string;
+    memoryTotalMb: number;
+    memoryAvailableMb: number;
+    memoryUsedPct: number;
+    uptimeSec: number;
+  };
+  process: {
+    nodeVersion: string;
+    pid: number;
+    uptimeMs: number;
+    heapUsedMb: number;
+    heapTotalMb: number;
+    heapUsedPct: number;
+    rssMb: number;
+    loadAverage: number;
+  };
+  disk: { pathRoot: string; usedPct: number; totalBytes: number; usedBytes: number };
+  ssl: {
+    status: string;
+    subject?: string;
+    issuer?: string;
+    notAfter?: string;
+    daysRemaining?: number | null;
+    sanDnsNames?: string[];
+    certPath?: string;
+  };
+  contract?: {
+    diskGb: number;
+    trafficGb: number;
+    trafficUsedGb: number;
+    start: string;
+    end: string;
+    daysLeft: number | null;
+    diskUsedPct: number;
+    trafficUsedPct: number;
+  };
+  health: Array<{ key: string; label: string; value: string; level: string }>;
+  alerts: Array<{ level: string; message: string }>;
+};
+
+function meterLevel(pct: number): 'ok' | 'warn' | 'danger' | 'unknown' {
+  if (!Number.isFinite(pct)) return 'unknown';
+  if (pct >= 90) return 'danger';
+  if (pct >= 70) return 'warn';
+  return 'ok';
+}
+
+function sslRingLevel(days: number | null | undefined, status: string): 'ok' | 'warn' | 'danger' | 'unknown' {
+  if (status === 'not_configured') return 'unknown';
+  if (status === 'expired' || status === 'file_missing' || status === 'read_error') return 'danger';
+  if (days == null) return 'unknown';
+  if (days <= 14) return 'danger';
+  if (days <= 30) return 'warn';
+  return 'ok';
+}
+
+function RingGauge({
+  label,
+  pct,
+  level,
+  unit = '%',
+  display,
+}: {
+  label: string;
+  pct: number;
+  level: 'ok' | 'warn' | 'danger' | 'unknown';
+  unit?: string;
+  display?: string | number;
+}) {
+  const r = 38;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, Number.isFinite(pct) ? pct : 0));
+  const offset = c - (clamped / 100) * c;
+  const center = display != null ? String(display) : Number.isFinite(pct) ? String(Math.round(clamped)) : '—';
+  return (
+    <article className="srv-gauge">
+      <p className="srv-gauge-title">{label}</p>
+      <svg className="srv-ring" viewBox="0 0 100 100" aria-hidden>
+        <circle className="srv-ring-bg" cx="50" cy="50" r={r} fill="none" strokeWidth="9" />
+        <circle
+          className={`srv-ring-${level}`}
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          transform="rotate(-90 50 50)"
+        />
+        <text className="srv-ring-text" x="50" y="48" textAnchor="middle" dominantBaseline="middle">{center}</text>
+        <text className="srv-ring-unit" x="50" y="64" textAnchor="middle">{unit}</text>
+      </svg>
+    </article>
+  );
+}
+
 export function PlatformPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<'server' | 'ssl' | 'contract' | 'domains'>('server');
   const [error, setError] = useState('');
-  const [data, setData] = useState<{ publicHost: string; chainId: number; apiBase: string; orgs: Array<{ id: string; name: string; level: OrgLevel; slug: string; customDomain: string; loginHost: string }> } | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [isHq, setIsHq] = useState(false);
+  const [data, setData] = useState<{
+    publicHost: string;
+    publicApiBase?: string;
+    chainId: number;
+    apiBase: string;
+    settings?: PlatformSettings;
+    orgs: PlatformOrg[];
+  } | null>(null);
+  const [server, setServer] = useState<ServerSummary | null>(null);
+  const [form, setForm] = useState<PlatformSettings | null>(null);
+  const [domainEdits, setDomainEdits] = useState<Record<string, string>>({});
+
+  const loadPlatform = async () => {
+    const row = await apiAuth<NonNullable<typeof data>>('/api/platform');
+    setData(row);
+    if (row.settings) setForm(row.settings);
+    setDomainEdits(Object.fromEntries((row.orgs || []).map((o) => [o.id, o.customDomain || ''])));
+  };
+
+  const loadServer = async () => {
+    try {
+      const row = await apiAuth<ServerSummary>('/api/platform/server');
+      setServer(row);
+      setIsHq(true);
+      if (row.settings) setForm(row.settings);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('hq_only') || msg.includes('403')) {
+        setIsHq(false);
+        return;
+      }
+      throw err;
+    }
+  };
 
   useEffect(() => {
-    void apiAuth<NonNullable<typeof data>>('/api/platform')
-      .then(setData)
-      .catch((err: Error) => {
-        setError(err.message);
-        if (isAuthError(err)) navigate('/admin/login', { replace: true });
-      });
+    void (async () => {
+      try {
+        await loadPlatform();
+        await loadServer();
+      } catch (err) {
+        setError((err as Error).message);
+        if (isAuthError(err as Error)) navigate('/admin/login', { replace: true });
+      }
+    })();
   }, [navigate]);
 
-  if (!data) return <p className="boot">{error || t('boot')}</p>;
+  useEffect(() => {
+    if (!isHq || !form?.uiRefreshSec) return undefined;
+    const sec = Math.max(15, Number(form.uiRefreshSec) || 120);
+    const timer = window.setInterval(() => {
+      void loadServer().catch(() => undefined);
+    }, sec * 1000);
+    return () => window.clearInterval(timer);
+  }, [isHq, form?.uiRefreshSec]);
+
+  const saveSettings = async () => {
+    if (!form) return;
+    setBusy(true);
+    setError('');
+    setSaved(false);
+    try {
+      const row = await apiAuth<{ settings: PlatformSettings; server: ServerSummary }>('/api/platform/settings', {
+        method: 'PUT',
+        body: JSON.stringify(form),
+      });
+      setForm(row.settings);
+      setServer(row.server);
+      await loadPlatform();
+      setSaved(true);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveOrgDomain = async (orgId: string) => {
+    setBusy(true);
+    setError('');
+    setSaved(false);
+    try {
+      await apiAuth(`/api/orgs/${orgId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ brand: { customDomain: (domainEdits[orgId] || '').trim().toLowerCase() } }),
+      });
+      await loadPlatform();
+      setSaved(true);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!data || !form) return <p className="boot">{error || t('boot')}</p>;
+
+  const pill = (level: string) => {
+    if (level === 'danger') return 'support-portal_only';
+    if (level === 'warn') return 'support-partial';
+    if (level === 'ok') return 'support-api';
+    return 'support-local';
+  };
 
   return (
-    <section className="panel">
+    <section className="panel support-portal">
       <h2>{t('menu.platform')}</h2>
-      <p className="hint">{t('platform.lead')}</p>
-      <table className="desk-table">
-        <tbody>
-          <tr><th>{t('desk.domain')}</th><td>{data.publicHost}</td></tr>
-          <tr><th>{t('desk.ssl')}</th><td>HTTPS</td></tr>
-          <tr><th>{t('desk.chain')}</th><td>{data.chainId}</td></tr>
-          <tr><th>{t('platform.api')}</th><td>{data.apiBase}</td></tr>
-        </tbody>
-      </table>
-      <table className="desk-table">
-        <thead>
-          <tr>
-            <th>{t('reg.name')}</th>
-            <th>{t('brand.slug')}</th>
-            <th>{t('brand.domain')}</th>
-            <th>{t('platform.loginHost')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.orgs.map((org) => (
-            <tr key={org.id}>
-              <td>{levelCode[org.level]} {org.name}</td>
-              <td>{org.slug}</td>
-              <td>{org.customDomain}</td>
-              <td>{org.loginHost}</td>
-            </tr>
+      <div className="support-body">
+        <p className="support-lead">{t('platform.lead')}</p>
+        {error ? <p className="banner-bad">{error}</p> : null}
+        {saved ? <p className="support-note">{t('platform.saved')}</p> : null}
+        {!isHq ? <p className="support-note">{t('platform.hqOnly')}</p> : null}
+
+        <div className="support-tabs">
+          {([
+            ['server', t('platform.tabServer')],
+            ['ssl', t('platform.tabSsl')],
+            ['contract', t('platform.tabContract')],
+            ['domains', t('platform.tabDomains')],
+          ] as const).map(([id, label]) => (
+            <button key={id} type="button" className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
+              {label}
+            </button>
           ))}
-        </tbody>
-      </table>
+        </div>
+
+        {tab === 'server' ? (
+          <div className="support-block">
+            <h3>{t('platform.tabServer')}</h3>
+            <p className="support-note">{t('platform.serverLead')}</p>
+            <div className="btn-row-left">
+              <button type="button" className="btn-compact" disabled={busy || !isHq} onClick={() => void loadServer()}>{t('platform.refresh')}</button>
+            </div>
+            {server ? (() => {
+              const loadPct = server.host.cpuCount > 0
+                ? Math.min(100, (server.process.loadAverage / server.host.cpuCount) * 100)
+                : 0;
+              const sslDays = server.ssl.daysRemaining;
+              const sslPct = sslDays == null ? 0 : Math.max(0, Math.min(100, (sslDays / 90) * 100));
+              return (
+                <>
+                  <p className="support-note">{t('platform.generatedAt')}: {server.generatedAt}</p>
+                  {server.alerts?.length ? (
+                    <div className="support-table-wrap">
+                      <table className="corp-steps-table">
+                        <thead>
+                          <tr><th>{t('platform.alerts')}</th><th>{t('platform.level')}</th></tr>
+                        </thead>
+                        <tbody>
+                          {server.alerts.map((row, idx) => (
+                            <tr key={`${row.message}-${idx}`}>
+                              <td>{row.message}</td>
+                              <td><span className={`support-pill ${pill(row.level)}`}>{row.level}</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+
+                  <div className="srv-gauge-grid">
+                    <RingGauge
+                      label={t('platform.mem')}
+                      pct={server.host.memoryUsedPct}
+                      level={meterLevel(server.host.memoryUsedPct)}
+                    />
+                    <RingGauge
+                      label={t('platform.disk')}
+                      pct={server.disk.usedPct || 0}
+                      level={server.disk.totalBytes ? meterLevel(server.disk.usedPct) : 'unknown'}
+                    />
+                    <RingGauge
+                      label={t('platform.load')}
+                      pct={loadPct}
+                      level={meterLevel(loadPct)}
+                      display={server.process.loadAverage.toFixed(1)}
+                      unit=""
+                    />
+                    <RingGauge
+                      label={t('platform.sslDays')}
+                      pct={sslPct}
+                      level={sslRingLevel(sslDays, String(server.ssl.status))}
+                      display={sslDays != null ? sslDays : '—'}
+                      unit="d"
+                    />
+                  </div>
+
+                  <div className="support-table-wrap">
+                    <table className="corp-cards-table">
+                      <thead>
+                        <tr>
+                          <th>{t('platform.health')}</th>
+                          <th>{t('platform.value')}</th>
+                          <th>{t('platform.level')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {server.health.map((row) => (
+                          <tr key={row.key}>
+                            <td>{row.label}</td>
+                            <td>{row.value}</td>
+                            <td><span className={`support-pill ${pill(row.level)}`}>{row.level}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="support-table-wrap">
+                    <table className="corp-steps-table">
+                      <thead>
+                        <tr><th>{t('platform.host')}</th><th>{t('platform.value')}</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>{t('platform.hostname')}</td><td>{server.host.hostname}</td></tr>
+                        <tr><td>{t('platform.os')}</td><td>{server.host.platform} {server.host.release} / {server.host.arch}</td></tr>
+                        <tr><td>{t('platform.cpu')}</td><td>{server.host.cpuCount} · {server.host.cpuModel}</td></tr>
+                        <tr><td>{t('platform.uptime')}</td><td>{Math.round(server.host.uptimeSec / 3600)}h</td></tr>
+                        <tr><td>{t('platform.node')}</td><td>{server.process.nodeVersion} · pid {server.process.pid}</td></tr>
+                        <tr><td>{t('platform.heap')}</td><td>{server.process.heapUsedPct}% ({server.process.heapUsedMb}/{server.process.heapTotalMb} MB)</td></tr>
+                        <tr><td>{t('desk.chain')}</td><td>{data.chainId}</td></tr>
+                        <tr><td>{t('platform.api')}</td><td>{data.apiBase}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })() : (
+              <p className="support-note">{t('platform.hqOnly')}</p>
+            )}
+          </div>
+        ) : null}
+
+        {tab === 'ssl' ? (
+          <div className="support-block">
+            <h3>{t('platform.tabSsl')}</h3>
+            <div className="support-fields" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+              <label>{t('platform.sslCertPath')}<input value={form.sslCertPath} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, sslCertPath: e.target.value })} placeholder="/etc/letsencrypt/live/.../fullchain.pem" /></label>
+              <label>{t('platform.sslLeDomain')}<input value={form.sslLeDomain} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, sslLeDomain: e.target.value })} /></label>
+              <label>{t('platform.autoRefresh')}<input type="number" min={15} max={3600} value={form.uiRefreshSec} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, uiRefreshSec: Number(e.target.value) })} /></label>
+            </div>
+            {server?.ssl ? (
+              <div className="support-table-wrap">
+                <table className="corp-steps-table">
+                  <tbody>
+                    <tr><th>{t('platform.sslStatus')}</th><td>{String(server.ssl.status)}</td></tr>
+                    <tr><th>{t('platform.sslSubject')}</th><td>{server.ssl.subject || '—'}</td></tr>
+                    <tr><th>{t('platform.sslIssuer')}</th><td>{server.ssl.issuer || '—'}</td></tr>
+                    <tr><th>{t('platform.sslNotAfter')}</th><td>{server.ssl.notAfter || '—'}</td></tr>
+                    <tr><th>{t('platform.sslDays')}</th><td>{server.ssl.daysRemaining ?? '—'}</td></tr>
+                    <tr><th>{t('platform.sslSan')}</th><td>{(server.ssl.sanDnsNames || []).join(', ') || '—'}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            <div className="btn-row-left">
+              <button type="button" className="btn-compact btn-save" disabled={!isHq || busy} onClick={() => void saveSettings()}>{t('platform.save')}</button>
+              <button type="button" className="btn-compact" disabled={!isHq || busy} onClick={() => void loadServer()}>{t('platform.refresh')}</button>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === 'contract' ? (
+          <div className="support-block">
+            <h3>{t('platform.tabContract')}</h3>
+            <div className="support-fields" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+              <label>{t('platform.diskGb')}<input type="number" min={0} step={0.1} value={form.contractDiskGb} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, contractDiskGb: Number(e.target.value) })} /></label>
+              <label>{t('platform.trafficGb')}<input type="number" min={0} step={0.1} value={form.contractTrafficGb} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, contractTrafficGb: Number(e.target.value) })} /></label>
+              <label>{t('platform.trafficUsedGb')}<input type="number" min={0} step={0.1} value={form.contractTrafficUsedGb} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, contractTrafficUsedGb: Number(e.target.value) })} /></label>
+              <label>{t('platform.contractStart')}<input type="date" value={form.contractStart} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, contractStart: e.target.value })} /></label>
+              <label>{t('platform.contractEnd')}<input type="date" value={form.contractEnd} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, contractEnd: e.target.value })} /></label>
+              <label>{t('platform.note')}<input value={form.note} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
+              <label>{t('platform.publicHost')}<input value={form.publicHost} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, publicHost: e.target.value })} /></label>
+              <label>{t('platform.publicApi')}<input value={form.publicApiBase} disabled={!isHq || busy} onChange={(e) => setForm({ ...form, publicApiBase: e.target.value })} /></label>
+            </div>
+            <div className="btn-row-left">
+              <button type="button" className="btn-compact btn-save" disabled={!isHq || busy} onClick={() => void saveSettings()}>{t('platform.save')}</button>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === 'domains' ? (
+          <div className="support-block">
+            <h3>{t('platform.tabDomains')}</h3>
+            <p className="support-note">{t('platform.domainsLead')}</p>
+            <div className="support-table-wrap">
+              <table className="corp-cards-table">
+                <thead>
+                  <tr>
+                    <th>{t('reg.name')}</th>
+                    <th>{t('brand.slug')}</th>
+                    <th>{t('platform.customDomain')}</th>
+                    <th>{t('platform.loginHost')}</th>
+                    <th>{t('platform.sslLink')}</th>
+                    <th>{t('platform.save')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.orgs.map((org, idx) => (
+                    <tr key={org.id} className={idx % 2 === 0 ? 'odd' : 'even'}>
+                      <td>{levelCode[org.level]} {org.name}</td>
+                      <td>{org.slug || '—'}</td>
+                      <td>
+                        <input
+                          value={domainEdits[org.id] ?? ''}
+                          disabled={busy || !isHq}
+                          onChange={(e) => setDomainEdits({ ...domainEdits, [org.id]: e.target.value })}
+                        />
+                      </td>
+                      <td>{org.loginHost}</td>
+                      <td>
+                        <span className={`support-pill ${org.sslLink === 'match' ? 'support-api' : org.sslLink === 'mismatch' ? 'support-portal_only' : 'support-local'}`}>
+                          {org.sslLink === 'match' ? t('platform.match') : org.sslLink === 'mismatch' ? t('platform.mismatch') : t('platform.unknown')}
+                        </span>
+                      </td>
+                      <td>
+                        <button type="button" className="btn-compact btn-save" disabled={busy || !isHq} onClick={() => void saveOrgDomain(org.id)}>
+                          {t('platform.saveDomain')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

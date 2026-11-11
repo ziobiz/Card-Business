@@ -7,6 +7,31 @@
 .login-lead, .login-hint { margin: 0; color: #667; line-height: 1.45; }
 .admin-login-card label { display: grid; gap: 6px; color: #333; }
 .login-input, .panel input, .panel select { width: 100%; border: 1px solid #eadfce; background: #fff7ea; color: #222; padding: 8px 10px; border-radius: 0; }
+.panel input[type="checkbox"],
+.panel input[type="radio"] {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.access-panel .access-matrix input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px;
+  margin: 0;
+  accent-color: #6658dd;
+  cursor: pointer;
+}
+.access-panel .access-matrix th,
+.access-panel .access-matrix td {
+  padding: 3px 4px;
+  font-size: 11px;
+}
+.access-panel .access-matrix td:not(:first-child) {
+  width: 56px;
+}
 .login-submit, .panel button, .side-out, .tree button, .user-top button { margin-top: 0; }
 .login-submit, .panel button { border: 0; background: #6658dd; color: #fff; padding: 8px 14px; cursor: pointer; }
 .login-error, .banner-bad { color: #a3203a; margin: 0; }
@@ -94,7 +119,7 @@
 .support-portal .support-tabs button.on { background: #2563eb; color: #fff; border-color: #2563eb; }
 .support-portal .support-block { display: grid; gap: 12px; padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; }
 .support-portal .support-template { margin: 0; white-space: pre-wrap; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 4px; padding: 14px 16px; line-height: 1.55; font-size: 12px; }
-.support-portal .support-template-actions { display: flex; justify-content: flex-start; margin: 0; }
+.support-portal .support-template-actions { display: flex; justify-content: flex-start; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; }
 .support-portal .support-template-actions button {
   width: auto;
   min-width: 0;
@@ -107,6 +132,42 @@
   cursor: pointer;
   white-space: nowrap;
 }
+.support-portal .corp-kyb-form,
+.support-portal .corp-inline-row {
+  display: flex;
+  align-items: end;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+.support-portal .corp-kyb-level {
+  display: grid;
+  gap: 4px;
+  width: 25%;
+  min-width: 120px;
+  max-width: 220px;
+  font-size: 12px;
+  color: #374151;
+}
+.support-portal .corp-kyb-level select {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+}
+.support-portal .corp-inline-field {
+  display: grid;
+  gap: 4px;
+  width: 50%;
+  min-width: 180px;
+  max-width: 420px;
+  font-size: 12px;
+  color: #374151;
+}
+.support-portal .corp-inline-field input {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+}
 .support-portal .support-list { margin: 0; padding-left: 18px; color: #374151; font-size: 12px; line-height: 1.6; }
 .support-portal .support-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
 .support-portal .support-fields label { display: grid; gap: 4px; font-size: 12px; color: #374151; }
@@ -118,7 +179,11 @@
   border: 1px solid #d1d5db;
   vertical-align: top;
 }
-.support-portal .support-table-wrap thead th { background: #f8f9fa; font-weight: 700; }
+.support-portal .support-table-wrap thead th,
+.support-portal table thead th {
+  background: var(--table-head-bg, #e4e7ed);
+  font-weight: 700;
+}
 .support-portal .support-matrix thead th { text-align: center; vertical-align: middle; }
 .support-portal .support-matrix td.support-matrix-status {
   text-align: center;
@@ -134,6 +199,64 @@
 }
 .support-portal .corp-steps-table td.support-matrix-status .support-pill {
   margin: 0 auto;
+}
+.support-portal .corp-cards-table th,
+.support-portal .corp-cards-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+.support-portal .corp-cards-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+.support-portal .corp-cards-table tbody tr:nth-child(even) {
+  background: #f3f6fb;
+}
+.support-portal .corp-cards-table input {
+  width: 88px;
+  max-width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  display: block;
+}
+.support-portal .corp-cards-table input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: default;
+}
+.support-portal .corp-cards-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* 관리 액션 버튼: 전부 파스텔 톤 (강한 원색/검정 금지) */
+.support-portal .corp-cards-actions .btn-edit {
+  background: #fde68a;
+  color: #92400e;
+}
+.support-portal .corp-cards-actions .btn-save {
+  background: #bbf7d0;
+  color: #166534;
+}
+.support-portal .corp-cards-actions .btn-block {
+  background: #fbcfe8;
+  color: #9d174d;
+}
+.support-portal .corp-cards-actions .btn-unblock {
+  background: #bae6fd;
+  color: #075985;
+}
+.support-portal .corp-cards-actions .btn-close {
+  background: #e5e7eb;
+  color: #374151;
+}
+.support-portal .btn-compact.btn-edit,
+.support-portal .btn-compact.btn-save,
+.support-portal .btn-compact.btn-block,
+.support-portal .btn-compact.btn-unblock,
+.support-portal .btn-compact.btn-close {
+  border: 1px solid transparent;
 }
 .support-portal .btn-row-left {
   display: flex;
@@ -169,8 +292,60 @@
 .support-portal .support-portal_only { border-color: #fca5a5; background: #fef2f2; }
 .support-portal .support-local { border-color: #93c5fd; background: #eff6ff; }
 .support-portal .banner-bad { margin: 0; }
+
+/* 서버현황 — 원형 게이지 4개 */
+.support-portal .srv-gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 11px 0 14px;
+  padding: 4px 0 2px;
+}
+.support-portal .srv-gauge {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  padding: 9px 12px 8px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  text-align: center;
+}
+.support-portal .srv-gauge-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+.support-portal .srv-ring {
+  width: 104px;
+  height: 104px;
+}
+.support-portal .srv-ring-bg { stroke: #e5e7eb; }
+.support-portal .srv-ring-ok { stroke: #86efac; }
+.support-portal .srv-ring-warn { stroke: #fcd34d; }
+.support-portal .srv-ring-danger { stroke: #fca5a5; }
+.support-portal .srv-ring-unknown { stroke: #93c5fd; }
+.support-portal .srv-ring-text {
+  fill: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+.support-portal .srv-ring-unit {
+  fill: #6b7280;
+  font-size: 10px;
+}
+.support-portal .support-block .support-table-wrap {
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
 @media (max-width: 900px) {
   .hq-shell, .stat-row, .fields, .support-portal .support-status, .support-portal .support-fields { grid-template-columns: 1fr; }
   .support-portal .support-search { grid-template-columns: 1fr; }
   .support-portal .support-body { padding: 14px; }
+  .support-portal .srv-gauge-grid { grid-template-columns: 1fr 1fr; margin: 9px 0 12px; }
+}
+@media (max-width: 560px) {
+  .support-portal .srv-gauge-grid { grid-template-columns: 1fr; }
 }

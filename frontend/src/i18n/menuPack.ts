@@ -2,8 +2,10 @@ const pack = {
   ko: {
     menu: {
       dashboard: '대시보드', company: '업체관리', orgs: '조직관리',
-      service: '서비스관리', risk: '리스크관리', revenue: '수익관리', usage: '이용관리',
-      ops: '운영관리', fees: '수수료설정', orgOps: '조직운영', users: '사용자관리', activity: '기록관리', corp: '법인관리', support: '지원관리',
+      service: '운영설정', risk: '리스크관리', revenue: '수익관리', usage: '이용관리',
+      ops: '서비스관리', fees: '수수료설정', orgOps: '조직운영', users: '유저관리',
+      cardIssue: '카드발급', issuedCards: '발급내역', activity: '사용내역', staff: '관리자관리',
+      corp: '온보딩관리', support: '지원관리',
       settings: '환경설정', brand: '브랜드관리', access: '접근권한', platform: '플랫폼 도메인 SSL', manual: '이용매뉴얼', link: 'API연동',
     },
     reg: {
@@ -48,8 +50,10 @@ const pack = {
   en: {
     menu: {
       dashboard: 'Dashboard', company: 'Companies', orgs: 'Organizations',
-      service: 'Services', risk: 'Risk', revenue: 'Revenue', usage: 'Usage',
-      ops: 'Operations', fees: 'Fees', orgOps: 'Org operations', users: 'Users', activity: 'Records', corp: 'Corporation', support: 'Support management',
+      service: 'Operation settings', risk: 'Risk', revenue: 'Revenue', usage: 'Usage',
+      ops: 'Service management', fees: 'Fees', orgOps: 'Org operations', users: 'User management',
+      cardIssue: 'Issue card', issuedCards: 'Issued cards', activity: 'Spend history', staff: 'Administrators',
+      corp: 'Onboarding management', support: 'Support management',
       settings: 'Settings', brand: 'Brand', access: 'Access', platform: 'Domain and SSL', manual: 'Manual', link: 'API link',
     },
     reg: {
@@ -94,8 +98,10 @@ const pack = {
   ja: {
     menu: {
       dashboard: 'ダッシュボード', company: '企業管理', orgs: '組織管理',
-      service: 'サービス', risk: 'リスク', revenue: '収益', usage: '利用',
-      ops: '運営', fees: '手数料', orgOps: '組織運営', users: 'ユーザー', activity: '記録', corp: '法人管理', support: 'サポート管理',
+      service: '運営設定', risk: 'リスク', revenue: '収益', usage: '利用',
+      ops: 'サービス管理', fees: '手数料', orgOps: '組織運営', users: 'ユーザー管理',
+      cardIssue: 'カード発行', issuedCards: '発行履歴', activity: '利用履歴', staff: '管理者管理',
+      corp: 'オンボーディング管理', support: 'サポート管理',
       settings: '設定', brand: 'ブランド', access: 'アクセス権', platform: 'ドメイン SSL', manual: 'マニュアル', link: 'API連携',
     },
     reg: {
@@ -135,8 +141,10 @@ const pack = {
   th: {
     menu: {
       dashboard: 'แดชบอร์ด', company: 'บริษัท', orgs: 'องค์กร',
-      service: 'บริการ', risk: 'ความเสี่ยง', revenue: 'รายได้', usage: 'การใช้งาน',
-      ops: 'ปฏิบัติการ', fees: 'ค่าธรรมเนียม', orgOps: 'ดำเนินงานองค์กร', users: 'ผู้ใช้', activity: 'บันทึก', corp: 'จัดการนิติบุคคล', support: 'การจัดการสนับสนุน',
+      service: 'ตั้งค่าปฏิบัติการ', risk: 'ความเสี่ยง', revenue: 'รายได้', usage: 'การใช้งาน',
+      ops: 'จัดการบริการ', fees: 'ค่าธรรมเนียม', orgOps: 'ดำเนินงานองค์กร', users: 'จัดการผู้ใช้',
+      cardIssue: 'ออกบัตร', issuedCards: 'ประวัติออกบัตร', activity: 'ประวัติใช้จ่าย', staff: 'ผู้ดูแลระบบ',
+      corp: 'จัดการ onboarding', support: 'การจัดการสนับสนุน',
       settings: 'ตั้งค่า', brand: 'แบรนด์', access: 'สิทธิ์', platform: 'โดเมน SSL', manual: 'คู่มือ', link: 'เชื่อม API',
     },
     reg: {
@@ -176,8 +184,10 @@ const pack = {
   zh: {
     menu: {
       dashboard: '仪表盘', company: '企业管理', orgs: '组织管理',
-      service: '服务管理', risk: '风险管理', revenue: '收益管理', usage: '使用管理',
-      ops: '运营管理', fees: '手续费设置', orgOps: '组织运营', users: '用户管理', activity: '记录管理', corp: '法人管理', support: '支持管理',
+      service: '运营设置', risk: '风险管理', revenue: '收益管理', usage: '使用管理',
+      ops: '服务管理', fees: '手续费设置', orgOps: '组织运营', users: '用户管理',
+      cardIssue: '发卡', issuedCards: '发卡记录', activity: '使用记录', staff: '管理员',
+      corp: '入驻管理', support: '支持管理',
       settings: '环境设置', brand: '品牌管理', access: '访问权限', platform: '平台域名 SSL', manual: '使用手册', link: 'API 连接',
     },
     reg: {
